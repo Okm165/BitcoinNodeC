@@ -1,0 +1,6 @@
+{
+    "chainstate": "data/BitcoinCore/BitcoinBlockChain/chainstate/",
+    "index": "data/BitcoinCore/BitcoinBlockChain/blocks/index/",
+    "blocks": "data/BitcoinCore/BitcoinBlockChain/blocks/",
+    "opcodes": "config/opCodesDb.json"
+}
