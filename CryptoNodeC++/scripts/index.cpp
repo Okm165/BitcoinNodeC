@@ -21,11 +21,11 @@ std::string IBlock::print(int n)
     return string;
 }
 
-IBlock readIBlock(Index& index, std::string& hash)
+IBlock readIBlock(Index* index, std::string& hash)
 {
     std::string key = 'b' + hash;
-    std::string value = index.get(key);
-    BStream b_value(value);
+    std::string value = index->get(key);
+    BStream b_value(&value);
     IBlock iblock;
     iblock.nVersion = (int64_t)b_value.readVarInt();
     iblock.nHeight = b_value.readVarInt();

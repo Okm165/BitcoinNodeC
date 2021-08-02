@@ -9,8 +9,7 @@ std::string CBlock::print(int n)
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
     string += dent(n+1) + "isCoinBase = " + std::to_string(isCoinBase) + "\n";
     string += dent(n+1) + "amount = " + std::to_string(amount) + "\n";
-    string += dent(n+1) + "scriptType = " + std::to_string(scriptType) + "\n";
-    string += dent(n+1) + "address = " + address + "\n";
+    string += address.print(n+1);
     string += dent(n) + "}\n";
     return string;
 }
@@ -48,6 +47,21 @@ void Chain::getBlockHash()
     this->hash = row.second;
 }
 
+uint64_t Chain::getLength(uint64_t length)
+{
+    if(length){return length;}
+    // get current position
+    leveldb::Slice pos = it->key();
+    uint64_t counter = 0;
+    while(it->Valid())
+    {
+        it->Next();
+        counter++;
+    }
+    it->Seek(pos);
+    return counter;
+}
+
 std::string Chain::applyObfuscationKey(const std::string& data)
 {
     char buffer[data.size()];
@@ -68,22 +82,21 @@ Row Chain::getRow()
     return ret;
 }
 
-CBlock readCBlock(Chain& chain, OpCodes& opcodes)
+CBlock readCBlock(Chain* chain, AddressDecoder* addrdec)
 {
-    Row row = chain.getRow();
+    Row row = chain->getRow();
     CBlock cblock;
 
-    BStream bstream_key(row.first);
+    BStream bstream_key(&row.first);
     bstream_key.movePos(1);
     cblock.hash = bstream_key.read(32);
     cblock.nHeight = bstream_key.readVarInt();
 
-    BStream bstream_value(row.second);
+    BStream bstream_value(&row.second);
     uint64_t code =  bstream_value.readVarInt();
     cblock.isCoinBase = (bool)(code & 1);
     cblock.blkHeight = code >> 1;
     cblock.amount = bstream_value.decompressAmount(bstream_value.readVarInt());
-    cblock.scriptType = bstream_value.readVarInt();
-    cblock.address = addressDecodeType(bstream_value, cblock.scriptType, opcodes);
+    addrdec->addressDecode(&cblock.address, &bstream_value, TYPE);
     return cblock;
 }

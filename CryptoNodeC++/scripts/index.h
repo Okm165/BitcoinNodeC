@@ -1,3 +1,17 @@
+/*
+Index decode functionality --> decode index level database
+------------------------------------------------------------------------------------------
+index database consists info about blocks that helps to find them in rev/blk files quickly
+------------------------------------------------------------------------------------------
+IBlock readIBlock(Index* index, std::string& hash)
+finds block by hash and returns useful data in IBlock object
+------------------------------------------------------------------------------------------
+Index(const char* path, bool create_if_missing=false) : LevelDb::LevelDb(path, create_if_missing)
+creates index object needed by readIBlock
+<path> is path to index database folder
+------------------------------------------------------------------------------------------
+*/
+
 #ifndef INDEX_H
 #define INDEX_H
 
@@ -29,6 +43,6 @@ class Index : public LevelDb
     Index(const char* path, bool create_if_missing=false) : LevelDb::LevelDb(path, create_if_missing){}
 };
 
-IBlock readIBlock(Index& index, std::string& hash);
+IBlock readIBlock(Index* index, std::string& hash);
 
 #endif

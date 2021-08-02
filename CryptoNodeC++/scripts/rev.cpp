@@ -9,8 +9,7 @@ std::string RTxIn::print(int n)
     string += dent(n+1) + "isCoinBase = " + std::to_string(isCoinBase) + "\n";
     string += dent(n+1) + "version = " + std::to_string(version) + "\n";
     string += dent(n+1) + "amount = " + std::to_string(amount) + "\n";
-    string += dent(n+1) + "scriptType = " + std::to_string(scriptType) + "\n";
-    string += dent(n+1) + "address = " + address + "\n";
+    string += address.print(n+1);
     string += dent(n) + "}\n";
     return string;
 }
@@ -37,7 +36,7 @@ std::string RBlock::print(int n)
     return string;
 }
 
-RBlock readRBlock(Index& index, OpCodes& opcodes, const char* rev_path, std::string& hash)
+RBlock readRBlock(Index* index, AddressDecoder* addrdec, const char* rev_path, std::string& hash)
 {
     IBlock iblock = readIBlock(index, hash);
     RBlock rblock;
@@ -55,18 +54,16 @@ RBlock readRBlock(Index& index, OpCodes& opcodes, const char* rev_path, std::str
     file_path += "rev";
     file_path += std::to_string(100000+iblock.nFile).substr(1);
     file_path += ".dat";
-
-    FStream rev_file(file_path.c_str());
+    FStream rev_file(file_path.c_str(), READONLY);
     // move to nUndoPos - 8 = begining of block
     rev_file.setPos(iblock.nUndoPos);
     rev_file.movePos(-8);
-
     // parsing starts
     rblock.id = rev_file.read<int>();
     rblock.headerLength = rev_file.read<uint32_t>();
-
+    
     std::string rev_stream = rev_file.read(rblock.headerLength);
-    BStream bstream(rev_stream);
+    BStream bstream(&rev_stream);
 
     // vector unserialization
     uint64_t inVecLength = bstream.readCompactSize();
@@ -84,12 +81,9 @@ RBlock readRBlock(Index& index, OpCodes& opcodes, const char* rev_path, std::str
             txin.isCoinBase = (bool)(code & 1);
             uint64_t height = code >> 1;
             if(height > 0)
-            {
                 txin.version = bstream.readVarInt();
-            }
             txin.amount = bstream.decompressAmount(bstream.readVarInt());
-            txin.scriptType = bstream.readVarInt();
-            txin.address = addressDecodeType(bstream, txin.scriptType, opcodes);
+            addrdec->addressDecode(&txin.address, &bstream, TYPE);
             rblock.inVec.push_back(txin);
         }
     }

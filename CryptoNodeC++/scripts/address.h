@@ -1,60 +1,88 @@
+/*
+Address decode functionality --> decode scriptPubKey
+------------------------------------------------------------------------------------------
+In order to use address decoder create object AddressDecoder and call addressDecode() functionality.
+------------------------------------------------------------------------------------------
+void addressDecode(Address* addr_buf, BStream* bstream, const AddressDecoderMode& mode)
+decodes address from <bstream> and saves it to <addr_buf>, in specified mode <mode>,
+modes are: TYPE or SCRIPT, 
+TYPE    -- chainstate_db and ?????rev.dat  
+SCRIPT  -- ?????blk.dat
+------------------------------------------------------------------------------------------
+*/
+
 #ifndef ADDRESS_H
 #define ADDRESS_H
 
-#include "../primitives/primitives.h"
+#include "opcodes.h"
 #include "../crypto/crypto.h"
+#include "../primitives/primitives.h"
 
-class OpCodes
+#define SPECIAL_SCRIPT_SIZE 6
+
+enum AddressDecoderMode
 {
-    public:
-    Json::Value json;
-    const char* path;
-    OpDict dict;
+    TYPE,                                       // type defined encoding
+    SCRIPT,                                     // script defined encoding
+};
+
+const char* GetAddressDecoderModeName(AddressDecoderMode mode);
+
+enum AddressDecoderType
+{
+    NONE,                                       // default value
+    FAIL,                                       // failed to decode scriptPubKey or scriptPubKey results in failture
+    P2SH,                                       // pay to script hash
+    P2PKH,                                      // pay to public key hash
+    P2WSH,                                      // pay to witness script hash
+    OTHER,                                      // not defined scriptPubKey
+    P2WPKH,                                     // pay to witness public key hash
+    P2PKH_COMPRESSED,                           // pay to compressed public key
+    P2PKH_NO_RIPEMDSHA,                         // pay to unhashed public key
+};
+
+const char* GetAddressDecoderTypeName(AddressDecoderType type);
+
+struct Address
+{
+    bool addressFlag;                           // true if address successfuly decoded, false otherwise 
+    std::string raw;                            // raw data from which address is decoded
+    std::string address;                        // decoded address string
+    AddressDecoderType type;                    // address type
+    std::vector<std::string> decoded;           // entire decoded vector 
+
+    std::string print(int n = 0);
+};
+
+class AddressDecoder
+{
+    protected:
     secp256k1_context* ctx = NULL;
 
-    OpCodes(){};
-    OpCodes(const char* path);
-
-    void createOpDict();
-    
-    std::vector<std::string> inScriptDecode(std::string& data);
-
-    std::vector<std::string> outScriptDecode(std::string& data);
-
-    std::string outScriptAddress(std::vector<std::string>& data);
-
-    ~OpCodes()
+    public:
+    AddressDecoder(){};
+    ~AddressDecoder()
     {
         secp256k1_context_destroy(ctx);
-    };
+    }
+
+    void scriptPubKey_parse(Address* addr_buf);
+    void addressDecode(Address* addr_buf, BStream* bstream, const AddressDecoderMode& mode);
+    
+    bool PK_check(std::string data);
+    bool PK_decompress(std::string data, std::string& pub_key);
+    std::string base58(const std::string& data, unsigned char id);
+    std::string bech32(const std::string& data);
+    std::string base58_P2PKH(std::string& data);
+    std::string base58_P2SH(std::string& data);
+    std::string base58_P2PK_ripemdsha(std::string& data);
+    std::string base58_P2S_ripemdsha(std::string& data);
+    std::string bech32_P2W(std::string& data);
 };
 
 std::string sha256(const std::string& data);
-
 std::string doublesha256(const std::string& data);
-
 std::string ripemd(const std::string& data);
-
 std::string ripemdsha(std::string& data);
-
-std::string decompressPK(std::string script, OpCodes& opcodes);
-
-std::string base58(const std::string& data, unsigned char id);
-
-std::string bech32(const std::string& script);
-
-std::string base58_P2PKH(std::string& script);
-
-std::string base58_P2SH(std::string& script);
-
-std::string base58_P2PK_ripemdsha(std::string& script);
-
-std::string bech32_P2W(std::string& script);
-
-std::vector<std::string> scriptDecode(std::map<unsigned char, std::string>& dict, std::string& data);
-
-std::string addressDecodeScript(std::vector<std::string>& data, OpCodes& opcodes);
-
-std::string addressDecodeType(BStream& bstream, uint64_t& scriptType, OpCodes& opcodes);
 
 #endif

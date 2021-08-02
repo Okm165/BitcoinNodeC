@@ -5,8 +5,7 @@ std::string BTxIn::print(int n)
     std::string string;
     string =  dent(n) + "BTxIn{\n";
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
-    string += dent(n+1) + "scriptLength = " + std::to_string(scriptLength) + "\n";
-    // string += dent(n+1) + "script = " + script + "\n";
+    // string += address.print(n+1);
     string += dent(n+1) + "sequence = " + std::to_string(sequence) + "\n";
     string += dent(n+1) + "wScriptLength = " + std::to_string(witnessScriptVec.size()) + "\n";
     // string += dent(n+1) + "witnessScriptVec = ";
@@ -25,15 +24,7 @@ std::string BTxOut::print(int n)
     string =  dent(n) + "BTxOut{\n";
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
     string += dent(n+1) + "amount = " + std::to_string(amount) + "\n";
-    string += dent(n+1) + "scriptLength = " + std::to_string(scriptLength) + "\n";
-    // string += dent(n+1) + "script = " + script + "\n";
-    // string += dent(n+1) + "scriptDecoded = ";
-    // for(std::string scr : scriptDecoded)
-    // {
-    //     string += scr;
-    // }
-    // string += "\n";
-    string += dent(n+1) + "address = " + address + "\n";
+    string += address.print(n+1);
     string += dent(n) + "}\n";
     return string;
 }
@@ -83,48 +74,45 @@ std::string BBlock::print(int n)
     return string;
 }
 
-std::vector<BTxIn> readInVector(BStream& bstream, OpCodes& opcodes)
+std::vector<BTxIn> readInVector(BStream* bstream, AddressDecoder* addrdec)
 {
-    uint64_t inVecLength = bstream.readCompactSize();
+    uint64_t inVecLength = bstream->readCompactSize();
     std::vector<BTxIn> inVec;
     inVec.reserve(inVecLength);
 
     // inVec deserialization
-    for(size_t it = 0; it < inVecLength; it++)
+    for(uint64_t it = 0; it < inVecLength; it++)
     {
         BTxIn txin;
-        bstream.movePos(32);
-        txin.nHeight = bstream.read<uint32_t>();
-        txin.scriptLength = bstream.readCompactSize();
-        txin.script = bstream.read(txin.scriptLength);
-        txin.sequence = bstream.read<uint32_t>();
+        bstream->movePos(32);
+        txin.nHeight = bstream->read<uint32_t>();
+        // addrdec->addressDecode(&txin.address, bstream, SCRIPT);
+        bstream->movePos(bstream->readCompactSize());
+        txin.sequence = bstream->read<uint32_t>();
         inVec.push_back(txin);
     }
     return inVec;
 }
 
-std::vector<BTxOut> readOutVector(BStream& bstream, OpCodes& opcodes)
+std::vector<BTxOut> readOutVector(BStream* bstream, AddressDecoder* addrdec)
 {
-    uint64_t outVecLength = bstream.readCompactSize();
+    uint64_t outVecLength = bstream->readCompactSize();
     std::vector<BTxOut> outVec;
     outVec.reserve(outVecLength);
 
     // outVec deserialization
-    for(size_t it = 0; it < outVecLength; it++)
+    for(uint64_t it = 0; it < outVecLength; it++)
     {
         BTxOut txout;
         txout.nHeight = it;
-        txout.amount = bstream.read<uint64_t>();
-        txout.scriptLength = bstream.readCompactSize();
-        txout.script = bstream.read(txout.scriptLength);
-        txout.scriptDecoded = opcodes.outScriptDecode(txout.script);
-        txout.address = opcodes.outScriptAddress(txout.scriptDecoded);
+        txout.amount = bstream->read<uint64_t>();
+        addrdec->addressDecode(&txout.address, bstream, SCRIPT);
         outVec.push_back(txout);
     }
     return outVec;
 }
 
-BBlock readBBlock(Index& index, OpCodes& opcodes, const char * blk_path, std::string& hash)
+BBlock readBBlock(Index* index, AddressDecoder* addrdec, const char * blk_path, std::string& hash)
 {
     IBlock iblock = readIBlock(index, hash);
     BBlock bblock;
@@ -137,7 +125,7 @@ BBlock readBBlock(Index& index, OpCodes& opcodes, const char * blk_path, std::st
     file_path += std::to_string(100000+iblock.nFile).substr(1);
     file_path += ".dat";
 
-    FStream blk_file(file_path.c_str());
+    FStream blk_file(file_path.c_str(), READONLY);
     // move to nDataPos - 8 = begining of block
     blk_file.setPos(iblock.nDataPos);
     blk_file.movePos(-8);
@@ -147,7 +135,7 @@ BBlock readBBlock(Index& index, OpCodes& opcodes, const char * blk_path, std::st
     bblock.headerLength = blk_file.read<uint32_t>();
 
     std::string blk_stream = blk_file.read(bblock.headerLength);
-    BStream bstream(blk_stream);
+    BStream bstream(&blk_stream);
 
     // parse block header
     bblock.version = bstream.read<uint32_t>();
@@ -167,7 +155,7 @@ BBlock readBBlock(Index& index, OpCodes& opcodes, const char * blk_path, std::st
     bblock.txVec.reserve(txVecLength);
     bool allowWitness = true; // client version dependent, for updated clients always true (after soft fork)
     
-    for(size_t it = 0; it < txVecLength; it++)
+    for(uint64_t it = 0; it < txVecLength; it++)
     {
         BTx tx;
         std::string tx_hashbuff;
@@ -180,15 +168,15 @@ BBlock readBBlock(Index& index, OpCodes& opcodes, const char * blk_path, std::st
         // read in and out vectors
         char flags = 0;
         uint64_t tx_hashbuff_pt1 = bstream.getPos();
-        tx.inVec = readInVector(bstream, opcodes);
+        tx.inVec = readInVector(&bstream, addrdec);
         if(tx.inVec.size() == 0 && allowWitness)
         {
             flags = bstream.read<char>();
             if(flags != 0)
             {
                 uint64_t tx_hashbuff_pt1 = bstream.getPos();
-                tx.inVec = readInVector(bstream, opcodes);
-                tx.outVec = readOutVector(bstream, opcodes);
+                tx.inVec = readInVector(&bstream, addrdec);
+                tx.outVec = readOutVector(&bstream, addrdec);
                 uint64_t tx_hashbuff_pt2 = bstream.getPos();
 
                 bstream.setPos(tx_hashbuff_pt1);
@@ -197,7 +185,7 @@ BBlock readBBlock(Index& index, OpCodes& opcodes, const char * blk_path, std::st
         }
         else
         {
-            tx.outVec = readOutVector(bstream, opcodes);
+            tx.outVec = readOutVector(&bstream, addrdec);
             uint64_t tx_hashbuff_pt2 = bstream.getPos();
 
             bstream.setPos(tx_hashbuff_pt1);
