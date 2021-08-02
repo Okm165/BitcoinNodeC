@@ -1,0 +1,9 @@
+compile jsonrpc client:
+g++ jsonrpcclient.cpp -ljsoncpp -ljsonrpccpp-common -ljsonrpccpp-client -o simpleclient
+compile jsonrpc server:
+g++ jsonrpcserver.cpp -ljsoncpp -ljsonrpccpp-common -ljsonrpccpp-server -o simpleserver
+
+settings:
+BitcoinCore ZeroMQ Broadcast port: 31415
+JSONRPC server port: 27182
+
