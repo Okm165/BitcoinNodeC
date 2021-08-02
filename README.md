@@ -2,6 +2,7 @@
 
 ## Build procedure:
 
+cd CryptoNodeC++/ <br>
 mkdir build <br>
 mkdir data <br>
 mkdir data/BitcoinCore <br>
