@@ -1,12 +1,12 @@
 # BitcoinNodeC
 
-Build procedure:
+## Build procedure:
 
-mkdir build
-mkdir data
-mkdir data/BitcoinCore
-mkdir data/cache
-mkdir data/chainstate
+mkdir build <br>
+mkdir data <br>
+mkdir data/BitcoinCore <br>
+mkdir data/cache <br>
+mkdir data/chainstate <br>
 
-./mount
-./configure
+./mount <br>
+./configure <br>
