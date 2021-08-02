@@ -11,6 +11,7 @@
 #include "export.h"
 #include "iterator.h"
 #include "options.h"
+#include "cache.h"
 
 namespace leveldb {
 

@@ -1,19 +1,33 @@
+/*
+Os functionalty --> operating system functionalities
+------------------------------------------------------------------------------------------
+*/
+
 #ifndef OS_H
 #define OS_H
 
 #include <string>
 #include <cassert>
-#include <fcntl.h>
-#include <dirent.h>
 #include <unistd.h>
 #include <string.h>
+
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
+
+#include <winbase.h>
+
+#elif defined(__unix__)
+
+#include <fcntl.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/sendfile.h>
 
-inline bool dirExists(const char* path);
-inline bool fileExists(const char* path);
-inline bool mkDir(const char* path, mode_t mode = 0777);
-inline bool rmDir(const char* path);
+#endif
+
+bool dirExists(const char* path);
+bool fileExists(const char* path);
+bool mkDir(const char* path, mode_t mode = 0777);
+bool rmDir(const char* path);
 
 bool clearDir(std::string& path);
 

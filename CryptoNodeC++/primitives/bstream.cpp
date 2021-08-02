@@ -1,6 +1,6 @@
 #include "bstream.h"
 
-BStream::BStream(std::string &data, uint64_t cursor)
+BStream::BStream(std::string* data, uint64_t cursor)
 {
     this->bytes = data;
     this->cursor = cursor;
@@ -16,12 +16,14 @@ void BStream::setPos(uint64_t pos){cursor = pos;}
 void BStream::movePos(uint64_t step){cursor += step;}
 
 //get length
-uint64_t BStream::getLength(){return bytes.size();}
+uint64_t BStream::getLength(){return bytes->size();}
 
 //read length of bytes
-std::string BStream::read(uint32_t length)
+std::string BStream::read(uint64_t length)
 {
-    std::string ret(&(bytes.data()[cursor]), length);
+    if(cursor+length > bytes->size())
+        length = bytes->size()-cursor;
+    std::string ret(&(bytes->data()[cursor]), length);
     movePos(length);
     return ret;
 }
@@ -45,7 +47,7 @@ uint64_t BStream::readCompactSize()
 std::string BStream::readToEnd()
 {   
     uint64_t len = getLength() - cursor;
-    std::string ret(&bytes.data()[cursor]);
+    std::string ret(&bytes->data()[cursor]);
     movePos(len);
     return ret;
 }

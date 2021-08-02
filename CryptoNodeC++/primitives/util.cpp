@@ -1,4 +1,5 @@
 #include "util.h"
+#include "bstream.h"
 
 Json::Value getJson(const char* path)
 {
@@ -28,14 +29,6 @@ std::string dent(int n)
     return string;
 }
 
-template<class T>
-char sign(T num)
-{
-    if(num > 0){return 1;}
-    else if(num == 0){return 0;}
-    else{return -1;}
-}
-
 char char2int(char input)
 {
     if(input >= '0' && input <= '9')
@@ -44,7 +37,7 @@ char char2int(char input)
         return input - 'A' + 10;
     if(input >= 'a' && input <= 'f')
         return input - 'a' + 10;
-    std::cout << input << std::endl;
+    std::cout << (int)input << std::endl;
     throw std::invalid_argument("Invalid input string");
 }
 
@@ -109,5 +102,95 @@ std::string StringToHexReversed(std::string data)
         
     }
     std::string ret(buffer, len*2);
+    return ret;
+}
+
+std::string dictPrint(Dict& dict)
+{
+    std::string string;
+    for(Dict::iterator it = dict.begin(); it != dict.end(); it++)
+    {
+        string += it->first + " => " + it->second + "\n";
+    }
+    return string;
+}
+
+std::string dictPrint(adDict& addict)
+{
+    std::string string;
+    for(adDict::iterator it = addict.begin(); it != addict.end(); it++)
+    {
+        string += it->first + " => " + std::to_string(it->second) + "\n";
+    }
+    return string;
+}
+
+std::string dictPrint(amDict& amdict)
+{
+    std::string string;
+    for(amDict::iterator it = amdict.begin(); it != amdict.end(); it++)
+    {
+        string += std::to_string(it->first) + " => " + std::to_string(it->second) + "\n";
+    }
+    return string;
+}
+
+std::string dictPrint(adChDict& adchdict)
+{
+    std::string string;
+    for(adChDict::iterator it = adchdict.begin(); it != adchdict.end(); it++)
+    {
+        string += it->first + " => " + std::to_string(it->second) + "\n";
+    }
+    return string;
+}
+
+std::string dictPrint(amChDict& amchdict)
+{
+    std::string string;
+    for(amChDict::iterator it = amchdict.begin(); it != amchdict.end(); it++)
+    {
+        string += std::to_string(it->first) + " => " + std::to_string(it->second) + "\n";
+    }
+    return string;
+}
+
+// dict serialization format
+// uint64 dict.size() (number of rows, key and value pairs)
+// char<ADDRESS.size()> <ADDRESS> int64<AMOUNT>
+std::string serialize_adChDict(adChDict* dict)
+{
+    std::string ret;
+    //determine size of adChDict in bytes
+    uint64_t size = 8; //dict size variable
+    for(adChDict::iterator it = dict->begin(); it != dict->end(); it++)
+        size += it->first.size() + sizeof(it->second) + 1; //char before address telling how many bytes to read next
+    ret.resize(size);
+
+    BStream ser (&ret);
+    ser.write((uint64_t)(dict->size()));
+    for(adChDict::iterator it = dict->begin(); it != dict->end(); it++)
+    {
+        ser.write((unsigned char)(it->first.size()));
+        memcpy(&(((char*)ser.bytes->c_str())[ser.cursor]), it->first.c_str(), it->first.size());
+        ser.movePos(it->first.size());
+        ser.write(it->second);
+    }
+    return ret;
+}
+
+adChDict deserialize_adChDict(std::string* dict)
+{
+    adChDict ret;
+    BStream ser (dict);
+    uint64_t size = ser.read<uint64_t>();
+    for(uint64_t it = 0; it < size; it++)
+    {
+        unsigned char toread = ser.read<unsigned char>();
+        std::string key ((const char *)&((ser.bytes->c_str())[ser.cursor]), toread);
+        ser.movePos(toread);
+        int64_t value = ser.read<int64_t>();
+        ret[key] = value;
+    }
     return ret;
 }

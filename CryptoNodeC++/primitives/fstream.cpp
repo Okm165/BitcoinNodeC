@@ -1,9 +1,13 @@
 #include "fstream.h"
 
-FStream::FStream(const char* path)
+FStream::FStream(const char* path, FStreamOpCodes opcode)
 {
     this->path = path;
-    this->file.open(path, std::fstream::in | std::fstream::binary);
+    this->opcode = opcode;
+    if(opcode == READONLY){this->file.open(path, std::fstream::in | std::fstream::binary);}
+    else if(opcode == WRITEONLY){this->file.open(path, std::fstream::out | std::fstream::binary);}
+    else if(opcode == READWRITE){this->file.open(path, std::fstream::in | std::fstream::out | std::fstream::binary);}
+
     //check if file opens correctly
     assert(this->file.is_open());
     this->getLength();
@@ -23,8 +27,7 @@ void FStream::getLength()
     this->setPos(0);
 }
 
-//read length of bytes
-std::string FStream::read(uint32_t length)
+std::string FStream::read(uint64_t length)
 {
     char* buffer = new char [length];
     this->file.read(buffer, length);
@@ -32,3 +35,7 @@ std::string FStream::read(uint32_t length)
     delete[] buffer;
     return data;
 }
+
+void FStream::write(std::string& data){this->file << data;}
+
+void FStream::close(){this->file.close();}

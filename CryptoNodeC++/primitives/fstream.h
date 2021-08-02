@@ -1,22 +1,42 @@
+/*
+FStream functionalty --> filestream
+------------------------------------------------------------------------------------------
+In order to use FStream create object FStream
+------------------------------------------------------------------------------------------
+FStream(const char* path, FStreamOpCodes opcode)
+filestream serves file read/write functionalities,
+<path> is path to file,
+<opcode> is mode with which the file will be opened,
+avilable opcodes: READONLY, WRITEONLY, READWRITE
+------------------------------------------------------------------------------------------
+*/
+
 #ifndef FSTREAM_H
 #define FSTREAM_H
 
 #include "util.h"
 #include <vector>
 
+enum FStreamOpCodes
+{
+    READONLY,
+    WRITEONLY,
+    READWRITE
+};
 
 class FStream
 {
-    private:
+    protected:
 
     std::fstream file;
+    const char* path;
+    FStreamOpCodes opcode;
 
     public:
 
-    const char* path;
     uint64_t length;
 
-    FStream(const char* path);
+    FStream(const char* path, FStreamOpCodes opcode);
     
     //get current position
     uint64_t getPos();
@@ -42,7 +62,12 @@ class FStream
     }
     
     //read length of bytes
-    std::string read(uint32_t length);
+    std::string read(uint64_t length);
+
+    //write data to file has to have WRITE permissions
+    void write(std::string& data);
+
+    void close();
 };
 
 #endif

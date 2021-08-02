@@ -1,19 +1,19 @@
 #include "os.h"
 
-inline bool dirExists(const char* path)
+bool dirExists(const char* path)
 {
     struct stat buf;
     stat(path, &buf);
     return S_ISDIR(buf.st_mode);
 }
-inline bool fileExists(const char* path)
+bool fileExists(const char* path)
 {
     struct stat buf;
     stat(path, &buf);
     return S_ISREG(buf.st_mode);
 }
-inline bool mkDir(const char* path, mode_t mode){return mkdir(path, mode);}
-inline bool rmDir(const char* path){return rmdir(path);}
+bool mkDir(const char* path, mode_t mode){return mkdir(path, mode);}
+bool rmDir(const char* path){return rmdir(path);}
 
 bool clearDir(std::string& path)
 {
@@ -36,6 +36,13 @@ bool clearDir(std::string& path)
 
 bool copyFile(const char* src, const char* dst)
 {
+    
+    #if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
+
+    CopyFile(src, dst, false);
+
+    #elif defined(__unix__)
+
     int source = open(src, O_RDONLY, 0);
     int dest = open(dst, O_WRONLY | O_CREAT, 0777);
 
@@ -45,6 +52,9 @@ bool copyFile(const char* src, const char* dst)
     sendfile(dest, source, 0, buf.st_size);
     close(source);
     close(dest);
+
+    #endif
+
     return true;
 }
 
