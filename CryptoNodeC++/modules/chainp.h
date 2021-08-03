@@ -58,20 +58,17 @@ class ChainP
     
     adDict addict;
     amDict amdict;
-
-    bool progress;
-
     ProgressBar* bar;
     
     public:
 
     ChainP(){};
-    ChainP(Dict* paths, Chain* chain, AddressDecoder* opcodes, bool progress)
+    ChainP(Dict* paths, Chain* chain, AddressDecoder* opcodes)
     {
         this->paths = paths;
         this->chain = chain;
         this->opcodes = opcodes;
-        this->progress = progress;
+        title();
     }
     void title();
 

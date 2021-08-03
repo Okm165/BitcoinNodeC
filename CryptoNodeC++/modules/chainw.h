@@ -58,7 +58,6 @@ class ChainW
 
     adChDict adchdict;
     amChDict amchdict;
-    adChDict tadChDict;
     char direction = 0;                     // 1 if moving forward -1 if moving backward
 
     std::string startHash;
@@ -66,11 +65,10 @@ class ChainW
     std::string starthashpath;
     std::string dsthashpath;
 
-    leveldb::DB* startHashDb;               // start hash database, (for compose_amChDict functionality)
+    LevelDb* startHashDb;                   // start hash database, (for compose_amChDict functionality)
 
     std::vector<std::string> hashPath;      // vector consiting hashes to go through in order to get to desired state
-
-    bool progress;                          // if true ProgressBars are displayed                   
+                
     bool override;                          // if true chainwalker won't consider shorter paths, only absolute from startHash to dstHash
 
     ProgressBar* bar;
@@ -78,23 +76,26 @@ class ChainW
     public:
 
     ChainW(){};
-    ChainW(Dict* paths, Index* index, AddressDecoder* addrdec, bool progress = false, bool override = false)
+    ChainW(Dict* paths, Index* index, AddressDecoder* addrdec, bool override = false)
     {
         this->paths = paths;
         this->index = index;
         this->addrdec = addrdec;
-        this->progress = progress;
         this->override = override;
+        title();
+    }
+    ~ChainW()
+    {
+        delete startHashDb;
     }
     void title();
 
-    void compose_adChDict(std::string& hash);
+    void compose_adChDict();
     void compose_amChDict();
-
     void load_adChDict(adChDict* dict, std::string& path);
     void save_adChDict(adChDict* dict, std::string& path);
-
-    void composeHashPath();
+    void compose_hashPath();
+    
     void composeState(std::string startHash, std::string dstHash);
     void validateStates(std::string hash1, std::string hash2);
 
