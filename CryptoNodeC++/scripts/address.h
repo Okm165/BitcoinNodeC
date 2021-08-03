@@ -52,6 +52,7 @@ struct Address
     std::vector<std::string> decoded;           // entire decoded vector 
 
     std::string print(int n = 0);
+    bool IsValid();
 };
 
 class AddressDecoder

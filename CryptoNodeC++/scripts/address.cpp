@@ -191,6 +191,8 @@ std::string Address::print(int n)
     return string;
 }
 
+bool Address::IsValid(){return ((addressFlag == true) && (type != FAIL));}
+
 std::string sha256(const std::string& data)
 {
     hashwrapper* sha256 = new sha256wrapper();
