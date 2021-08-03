@@ -63,8 +63,8 @@ class LevelDb
     uint64_t getLength(uint64_t length = 0);
 };
 
-void saveDict(std::string path, bool create_if_missing, adDict& dict, bool progress = false);
-void saveDict(std::string path, bool create_if_missing, amDict& dict, bool progress = false);
-void compareDbs(std::string& path_1, std::string& path_2, bool progress = false);
+void saveDict(std::string path, adDict& dict, bool create_if_missing=true);
+void saveDict(std::string path, amDict& dict, bool create_if_missing=true);
+void compareDbs(std::string& path_1, std::string& path_2);
 
 #endif

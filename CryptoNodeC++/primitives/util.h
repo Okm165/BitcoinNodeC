@@ -54,6 +54,18 @@ std::string dictPrint(amDict& amdict);
 std::string dictPrint(adChDict& adchdict);
 std::string dictPrint(amChDict& adchdict);
 
+template<class Dict, class Key, class Value>
+void dictWrite(Dict* dict, const Key& key, const Value& value)
+{
+    if(dict->find(key) != dict->end())
+    {
+        int64_t newval = (*dict)[key] + value;
+        if(newval == 0){dict->erase(key);} 
+        else{(*dict)[key] = newval;}
+    }
+    else{(*dict)[key] = value;}
+}
+
 std::string serialize_adChDict(adChDict* dict);
 adChDict deserialize_adChDict(std::string* dict);
 
