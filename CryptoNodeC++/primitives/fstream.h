@@ -45,7 +45,7 @@ class FStream
     void setPos(uint64_t pos);
 
     //move position relatively to current position 
-    void movePos(u_int64_t pos);
+    void movePos(uint64_t pos);
 
     //get length of file
     void getLength();

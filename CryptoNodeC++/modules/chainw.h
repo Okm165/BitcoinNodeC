@@ -34,7 +34,7 @@ void load_adChDict(adChDict* dict, std::string& path)
 Load <adChDict> from cache
 ------------------------------------------------------------------------------------------
 void save_adChDict(adChDict* dict, std::string& path)
-Save adChDict to cache
+Save <adChDict> to cache
 ------------------------------------------------------------------------------------------
 void composeHashPath()
 Compose block path from <startHash> to dstHash, find shortest path if override is false
@@ -66,11 +66,8 @@ class ChainW
     std::string dsthashpath;
 
     LevelDb* startHashDb;                   // start hash database, (for compose_amChDict functionality)
-
     std::vector<std::string> hashPath;      // vector consiting hashes to go through in order to get to desired state
-                
     bool override;                          // if true chainwalker won't consider shorter paths, only absolute from startHash to dstHash
-
     ProgressBar* bar;
 
     public:

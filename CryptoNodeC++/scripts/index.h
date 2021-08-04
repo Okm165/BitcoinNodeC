@@ -32,7 +32,7 @@ struct IBlock
     std::string hashMerkleRoot;                     // merkle tree root hash
     uint32_t nTime;                                 // timestamp
     uint32_t nBits;                                 // nBits
-    u_int32_t nNonce;                               // nNonce
+    uint32_t nNonce;                                // nNonce
 
     std::string print(int n = 0);
 };

@@ -34,12 +34,12 @@ void BStream::reset(){cursor = 0;}
 //read compact size
 uint64_t BStream::readCompactSize()
 {
-    unsigned char chSize = read<char>();
+    uint8_t chSize = read<uint8_t>();
     uint64_t nSize = 0;
     if(chSize < 253){nSize = chSize;}
-    else if(chSize == 253){nSize = read<short>();}
-    else if(chSize == 254){nSize = read<int>();}
-    else{nSize = read<long int>();}
+    else if(chSize == 253){nSize = read<uint16_t>();}
+    else if(chSize == 254){nSize = read<uint32_t>();}
+    else{nSize = read<uint64_t>();}
     return nSize;
 }
 
@@ -58,7 +58,7 @@ uint64_t BStream::readVarInt()
     uint64_t n = 0;
     while(true)
     {
-        unsigned char chData = read<unsigned char>();
+        uint8_t chData = read<uint8_t>();
         n = (n << 7) | (chData & 0x7F);
         if(chData & 0x80){n++;}
         else{return n;}
