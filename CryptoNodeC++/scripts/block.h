@@ -23,7 +23,7 @@ struct BTxIn
     uint32_t sequence;                              // sequence value (not crucial)    
     std::vector<std::string> witnessScriptVec;      // witness script vector
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 struct BTxOut
@@ -32,7 +32,7 @@ struct BTxOut
     uint64_t amount;                                // transaction output value in SAT (1 SAT = 1/100000000 BTC)           
     Address address;                                // address object
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 struct BTx
@@ -44,7 +44,7 @@ struct BTx
     std::vector<BTxOut> outVec;                     // vector of TxOut objects
     uint64_t nLockTime;                             // transaction lock time
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 struct BBlock
@@ -61,7 +61,7 @@ struct BBlock
     uint32_t nNonce;                                // nNonce
     std::vector<BTx> txVec;                         // vector of Tx objects (transaction objects / transaction info)
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 std::vector<BTxIn> readInVector(BStream* bstream, AddressDecoder* addrdec);

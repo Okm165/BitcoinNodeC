@@ -30,7 +30,7 @@ struct CBlock
     uint64_t amount;                                // transaction input value in SAT (1 SAT = 1/100000000 BTC)
     Address address;                                // address object
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 class Chain : public LevelDb

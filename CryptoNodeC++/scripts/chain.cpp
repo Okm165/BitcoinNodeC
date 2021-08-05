@@ -1,6 +1,6 @@
 #include "chain.h"
 
-std::string CBlock::print(int n)
+std::string CBlock::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "CTxOut{\n";

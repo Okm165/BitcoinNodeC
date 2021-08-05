@@ -25,7 +25,7 @@ struct RTxIn
     uint64_t amount;                                // transaction input value in SAT (1 SAT = 1/100000000 BTC)
     Address address;                                // address object
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 struct RBlock
@@ -41,7 +41,7 @@ struct RBlock
     std::vector<RTxIn> inVec;                       // vector of TxIn objects
     std::string checksum;                           // checksum of entire UndoBlock for debug purposes
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 RBlock readRBlock(Index* index, AddressDecoder* addrdec, const char* rev_path, std::string& hash);

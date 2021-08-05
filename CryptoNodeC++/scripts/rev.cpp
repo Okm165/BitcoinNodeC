@@ -1,6 +1,6 @@
 #include "rev.h"
 
-std::string RTxIn::print(int n)
+std::string RTxIn::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "RTxIn{\n";
@@ -14,7 +14,7 @@ std::string RTxIn::print(int n)
     return string;
 }
 
-std::string RBlock::print(int n)
+std::string RBlock::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "RBlock{\n";
@@ -28,9 +28,7 @@ std::string RBlock::print(int n)
     string += dent(n+1) + "nUndoPos = " + std::to_string(nUndoPos) + "\n";
     string += dent(n+1) + "RTxInSize = " + std::to_string(inVec.size());
     for(RTxIn txin : inVec)
-    {
         string += txin.print(n+1);
-    }
     string += dent(n+1) + "checksum = " + StringToHex(checksum) + "\n";
     string += dent(n) + "}\n";
     return string;

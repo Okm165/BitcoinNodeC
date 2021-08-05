@@ -34,7 +34,7 @@ struct IBlock
     uint32_t nBits;                                 // nBits
     uint32_t nNonce;                                // nNonce
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
 };
 
 class Index : public LevelDb

@@ -1,6 +1,6 @@
 #include "block.h"
 
-std::string BTxIn::print(int n)
+std::string BTxIn::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "BTxIn{\n";
@@ -18,7 +18,7 @@ std::string BTxIn::print(int n)
     return string;
 }
 
-std::string BTxOut::print(int n)
+std::string BTxOut::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "BTxOut{\n";
@@ -29,7 +29,7 @@ std::string BTxOut::print(int n)
     return string;
 }
 
-std::string BTx::print(int n)
+std::string BTx::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "BTx{\n";
@@ -38,20 +38,16 @@ std::string BTx::print(int n)
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
     string += dent(n+1) + "BTxInSize = " + std::to_string(inVec.size()) + "\n";
     for(BTxIn txin : inVec)
-    {
         string += txin.print(n+1);
-    }
     string += dent(n+1) + "BTxOutSize = " + std::to_string(outVec.size()) + "\n";
     for(BTxOut txout : outVec)
-    {
         string += txout.print(n+1);
-    }
     string += dent(n+1) + "nLockTime = " + std::to_string(nLockTime) + "\n";
     string += dent(n) + "}\n";
     return string;
 }
 
-std::string BBlock::print(int n)
+std::string BBlock::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "BBlock{\n";
@@ -67,9 +63,7 @@ std::string BBlock::print(int n)
     string += dent(n+1) + "nNonce = " + std::to_string(nNonce) + "\n";
     string += dent(n+1) + "BTxSize = " + std::to_string(txVec.size()) + "\n";
     for(BTx tran : txVec)
-    {
         string += tran.print(n+1);
-    }
     string += dent(n) + "}\n";
     return string;
 }

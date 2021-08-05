@@ -26,7 +26,7 @@ enum AddressDecoderMode
     SCRIPT,                                     // script defined encoding
 };
 
-const char* GetAddressDecoderModeName(AddressDecoderMode mode);
+const char* GetAddressDecoderModeName(const AddressDecoderMode& mode);
 
 enum AddressDecoderType
 {
@@ -41,7 +41,7 @@ enum AddressDecoderType
     P2PKH_NO_RIPEMDSHA,                         // pay to unhashed public key
 };
 
-const char* GetAddressDecoderTypeName(AddressDecoderType type);
+const char* GetAddressDecoderTypeName(const AddressDecoderType& type);
 
 struct Address
 {
@@ -51,7 +51,7 @@ struct Address
     AddressDecoderType type;                    // address type
     std::vector<std::string> decoded;           // entire decoded vector 
 
-    std::string print(int n = 0);
+    std::string print(uint8_t n = 0);
     bool IsValid();
 };
 

@@ -1,6 +1,6 @@
 #include "address.h"
 
-const char* GetAddressDecoderModeName(AddressDecoderMode mode)
+const char* GetAddressDecoderModeName(const AddressDecoderMode& mode)
 {
     switch (mode)
     {
@@ -10,7 +10,7 @@ const char* GetAddressDecoderModeName(AddressDecoderMode mode)
     }
 }
 
-const char* GetAddressDecoderTypeName(AddressDecoderType type)
+const char* GetAddressDecoderTypeName(const AddressDecoderType& type)
 {
     switch (type)
     {
@@ -27,7 +27,7 @@ const char* GetAddressDecoderTypeName(AddressDecoderType type)
     }
 }
 
-const char* GetOpName(OpCodeType opcode)
+const char* GetOpName(const OpCodeType& opcode)
 {
     switch (opcode)
     {
@@ -164,7 +164,7 @@ const char* GetOpName(OpCodeType opcode)
     }
 }
 
-std::string Address::print(int n)
+std::string Address::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "Address{\n";
@@ -223,7 +223,6 @@ bool AddressDecoder::PK_check(std::string script)
 
 bool AddressDecoder::PK_decompress(std::string script, std::string& pub_key)
 {
-    script[0] = ((char)script.c_str()[0]) - 2;
     secp256k1_pubkey pubkey;
     if(!secp256k1_ec_pubkey_parse(ctx, &pubkey, (const unsigned char *)script.c_str(), 33))
         return false;
@@ -346,7 +345,7 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
                 addr_buf->raw = bstream->read(32);
 
                 std::string insert;
-                insert += (char)scriptLength;
+                insert += (char)(scriptLength-2);
                 insert += addr_buf->raw;
 
                 std::string pub_key;
@@ -444,7 +443,7 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
                     if(PK_decompress(addr_buf->decoded[0], pub_key))
                     {
                         addr_buf->type = P2PKH_COMPRESSED;
-                        addr_buf->address = base58_P2PK_ripemdsha(pub_key);
+                        addr_buf->address = base58_P2PK_ripemdsha(addr_buf->decoded[0]);
                         addr_buf->addressFlag = true;
                     }
                 }

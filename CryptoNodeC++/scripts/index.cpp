@@ -1,6 +1,6 @@
 #include "index.h"
 
-std::string IBlock::print(int n)
+std::string IBlock::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "IBlock{\n";
@@ -34,7 +34,7 @@ IBlock readIBlock(Index* index, std::string& hash)
     iblock.nFile = b_value.readVarInt();
     iblock.nDataPos = b_value.readVarInt();
     iblock.nUndoPos = b_value.readVarInt();
-    iblock.version = b_value.read<int>();
+    iblock.version = b_value.read<int32_t>();
     iblock.hashPrev = b_value.read(32);
     iblock.hashMerkleRoot = b_value.read(32);
     iblock.nTime = b_value.read<uint32_t>();
