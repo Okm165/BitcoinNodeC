@@ -10,10 +10,10 @@ BStream::BStream(std::string* data, uint64_t cursor)
 uint64_t BStream::getPos(){return cursor;}
 
 //set absolute position in bytestream
-void BStream::setPos(uint64_t pos){cursor = pos;}
+void BStream::setPos(const uint64_t& pos){cursor = pos;}
 
 //move cursor relatively to current position
-void BStream::movePos(uint64_t step){cursor += step;}
+void BStream::movePos(const uint64_t& step){cursor += step;}
 
 //get length
 uint64_t BStream::getLength(){return bytes->size();}

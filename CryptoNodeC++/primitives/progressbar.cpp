@@ -37,9 +37,11 @@ void ProgressBar::loop()
     std::string prefix = std::to_string(int(stat*100)) + "%";
 
     std::string bar = "";
-    for(int it = 0; it < fields; it++){bar += progressCharSet[charset_length-1];}
+    for(int it = 0; it < fields; it++)
+        bar += progressCharSet[charset_length-1];
     bar += progressCharSet[partial];
-    for(int it = 0; it < width-fields; it++){bar += " ";}
+    for(int it = 0; it < width-fields; it++)
+        bar += " ";
 
     std::string suffix;
     suffix += " ";
@@ -49,8 +51,10 @@ void ProgressBar::loop()
     suffix += " ";
     
     std::string timepred;
-    if(sm_avg >= 1){timepred += std::to_string(int(std::round(sm_avg))) + " it/s";}
-    else{timepred += std::to_string(sm_avg) + " it/s";}
+    if(sm_avg >= 1)
+        timepred += std::to_string(int(std::round(sm_avg))) + " it/s";
+    else
+        timepred += std::to_string(sm_avg) + " it/s";
     timepred += " ";
     timepred += timeConv(int(total_time.count()));
     timepred += ">";
@@ -78,18 +82,17 @@ std::string ProgressBar::timeConv(int time)
     short seconds = time % 60;
     int minutes = time/60;
     std::string string;
-    if(minutes < 10){string += "0";}
+    if(minutes < 10)
+        string += "0";
     string += std::to_string(minutes);
     string += ":";
-    if(seconds < 10){string += "0";}
+    if(seconds < 10)
+        string += "0";
     string += std::to_string(seconds);
     return string;
 }
 
-void ProgressBar::update(uint64_t step)
-{
-    progress += step;
-}
+void ProgressBar::update(const uint64_t& step){progress += step;}
 
 void ProgressBar::close()
 {

@@ -16,7 +16,7 @@ bool fileExists(const char* path)
     return false;
 }
 
-bool mkDir(const char* path, mode_t mode){return CreateDirectoryA((LPCSTR)path, NULL);}
+bool mkDir(const char* path){return CreateDirectoryA((LPCSTR)path, NULL);}
 
 bool rmDir(const char* path){return RemoveDirectoryA((LPCSTR)path);}
 
@@ -73,7 +73,11 @@ bool fileExists(const char* path)
     return S_ISREG(buf.st_mode);
 }
 
-bool mkDir(const char* path, mode_t mode){return mkdir(path, mode);}
+bool mkDir(const char* path)
+{
+    mode_t mode = 0777;
+    return mkdir(path, mode);
+}
 
 bool rmDir(const char* path){return rmdir(path);}
 

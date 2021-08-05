@@ -26,7 +26,7 @@ Os functionalty --> operating system functionalities
 
 bool dirExists(const char* path);
 bool fileExists(const char* path);
-bool mkDir(const char* path, mode_t mode = 0777);
+bool mkDir(const char* path);
 bool rmDir(const char* path);
 
 bool clearDir(std::string& path);

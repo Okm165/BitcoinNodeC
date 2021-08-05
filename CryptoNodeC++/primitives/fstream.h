@@ -36,16 +36,16 @@ class FStream
 
     uint64_t length;
 
-    FStream(const char* path, FStreamOpCodes opcode);
+    FStream(const char* path, const FStreamOpCodes& opcode);
     
     //get current position
     uint64_t getPos();
 
     //set absolute position from begining of the file 
-    void setPos(uint64_t pos);
+    void setPos(const uint64_t& pos);
 
     //move position relatively to current position 
-    void movePos(uint64_t pos);
+    void movePos(const uint64_t& pos);
 
     //get length of file
     void getLength();
@@ -62,7 +62,7 @@ class FStream
     }
     
     //read length of bytes
-    std::string read(uint64_t length);
+    std::string read(const uint64_t& length);
 
     //write data to file has to have WRITE permissions
     void write(std::string& data);

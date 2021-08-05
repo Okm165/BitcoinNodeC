@@ -1,12 +1,15 @@
 #include "fstream.h"
 
-FStream::FStream(const char* path, FStreamOpCodes opcode)
+FStream::FStream(const char* path, const FStreamOpCodes& opcode)
 {
     this->path = path;
     this->opcode = opcode;
-    if(opcode == READONLY){this->file.open(path, std::fstream::in | std::fstream::binary);}
-    else if(opcode == WRITEONLY){this->file.open(path, std::fstream::out | std::fstream::binary);}
-    else if(opcode == READWRITE){this->file.open(path, std::fstream::in | std::fstream::out | std::fstream::binary);}
+    if(opcode == READONLY)
+        this->file.open(path, std::fstream::in | std::fstream::binary);
+    else if(opcode == WRITEONLY)
+        this->file.open(path, std::fstream::out | std::fstream::binary);
+    else if(opcode == READWRITE)
+        this->file.open(path, std::fstream::in | std::fstream::out | std::fstream::binary);
 
     //check if file opens correctly
     assert(this->file.is_open());
@@ -16,9 +19,9 @@ FStream::FStream(const char* path, FStreamOpCodes opcode)
 
 uint64_t FStream::getPos(){return this->file.tellg();}
 
-void FStream::setPos(uint64_t pos){this->file.seekg(pos, std::fstream::ios_base::beg);}
+void FStream::setPos(const uint64_t& pos){this->file.seekg(pos, std::fstream::ios_base::beg);}
 
-void FStream::movePos(uint64_t pos){this->file.seekg(pos, std::fstream::ios_base::cur);}
+void FStream::movePos(const uint64_t& pos){this->file.seekg(pos, std::fstream::ios_base::cur);}
 
 void FStream::getLength()
 {
@@ -27,7 +30,7 @@ void FStream::getLength()
     this->setPos(0);
 }
 
-std::string FStream::read(uint64_t length)
+std::string FStream::read(const uint64_t& length)
 {
     char* buffer = new char [length];
     this->file.read(buffer, length);

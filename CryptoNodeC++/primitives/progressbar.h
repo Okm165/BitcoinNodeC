@@ -62,7 +62,7 @@ class ProgressBar
     void loop();
     void display(std::string &prefix, std::string &bar, std::string &suffix, std::string &timepred);
     void calculateAvg();
-    void update(uint64_t step = 1);
+    void update(const uint64_t& step = 1);
     void close();
     std::string timeConv(int time);
     static void threadFunc(ProgressBar* obj, std::atomic<bool>& threadFlag);

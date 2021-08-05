@@ -16,16 +16,15 @@ Dict composeJsonDict(const char* path)
     Dict dict;
     Json::Value json = getJson(path);
     for (Json::Value::iterator it = json.begin(); it != json.end(); ++it)
-    {
         dict[it.name()] = it->asString();
-    }
     return dict;
 }
 
-std::string dent(int n)
+std::string dent(uint8_t n)
 {
     std::string string = "";
-    for(int it = 0; it < n; it++){string += " ";}
+    for(uint8_t it = 0; it < n; it++)
+        string += " ";
     return string;
 }
 
@@ -37,7 +36,7 @@ char char2int(char input)
         return input - 'A' + 10;
     if(input >= 'a' && input <= 'f')
         return input - 'a' + 10;
-    std::cout << (int)input << std::endl;
+    std::cout << (uint32_t)input << std::endl;
     throw std::invalid_argument("Invalid input string");
 }
 
@@ -109,9 +108,7 @@ std::string dictPrint(Dict& dict)
 {
     std::string string;
     for(Dict::iterator it = dict.begin(); it != dict.end(); it++)
-    {
         string += it->first + " => " + it->second + "\n";
-    }
     return string;
 }
 
@@ -119,9 +116,7 @@ std::string dictPrint(adDict& addict)
 {
     std::string string;
     for(adDict::iterator it = addict.begin(); it != addict.end(); it++)
-    {
         string += it->first + " => " + std::to_string(it->second) + "\n";
-    }
     return string;
 }
 
@@ -129,9 +124,7 @@ std::string dictPrint(amDict& amdict)
 {
     std::string string;
     for(amDict::iterator it = amdict.begin(); it != amdict.end(); it++)
-    {
         string += std::to_string(it->first) + " => " + std::to_string(it->second) + "\n";
-    }
     return string;
 }
 
@@ -139,9 +132,7 @@ std::string dictPrint(adChDict& adchdict)
 {
     std::string string;
     for(adChDict::iterator it = adchdict.begin(); it != adchdict.end(); it++)
-    {
         string += it->first + " => " + std::to_string(it->second) + "\n";
-    }
     return string;
 }
 
@@ -149,9 +140,7 @@ std::string dictPrint(amChDict& amchdict)
 {
     std::string string;
     for(amChDict::iterator it = amchdict.begin(); it != amchdict.end(); it++)
-    {
         string += std::to_string(it->first) + " => " + std::to_string(it->second) + "\n";
-    }
     return string;
 }
 
@@ -186,7 +175,7 @@ adChDict deserialize_adChDict(std::string* dict)
     uint64_t size = ser.read<uint64_t>();
     for(uint64_t it = 0; it < size; it++)
     {
-        unsigned char toread = ser.read<unsigned char>();
+        uint8_t toread = ser.read<uint8_t>();
         std::string key ((const char *)&((ser.bytes->c_str())[ser.cursor]), toread);
         ser.movePos(toread);
         int64_t value = ser.read<int64_t>();

@@ -28,10 +28,10 @@ class BStream
     uint64_t getPos();
 
     //set absolute position in bytestream
-    void setPos(uint64_t pos);
+    void setPos(const uint64_t& pos);
 
     //move cursor relatively to current position
-    void movePos(uint64_t step);
+    void movePos(const uint64_t& step);
 
     //get length
     uint64_t getLength();
@@ -66,7 +66,7 @@ class BStream
     uint64_t decompressAmount(uint64_t x);
     
     template<class T>
-    void write(T insert)
+    void write(const T& insert)
     {
         memcpy(&(((char *)bytes->c_str())[cursor]), &insert, sizeof(T));
         movePos(sizeof(T));

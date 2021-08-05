@@ -29,13 +29,13 @@ typedef std::map<uint64_t, int64_t> amChDict;                       // amount ch
 Json::Value getJson(const char* path);
 Dict composeJsonDict(const char* path);
 
-std::string dent(int n);
+std::string dent(uint8_t n);
 
 template<class T>
-char sign(T num)
+char sign(const T& num)
 {
     if(num > 0){return 1;}
-    else if(num == 0){return 0;}
+    else if(!num){return 0;}
     else{return -1;}
 }
 
@@ -60,10 +60,13 @@ void dictWrite(Dict* dict, const Key& key, const Value& value)
     if(dict->find(key) != dict->end())
     {
         int64_t newval = (*dict)[key] + value;
-        if(newval == 0){dict->erase(key);} 
-        else{(*dict)[key] = newval;}
+        if(!newval)
+            dict->erase(key);
+        else
+            (*dict)[key] = newval;
     }
-    else{(*dict)[key] = value;}
+    else
+        (*dict)[key] = value;
 }
 
 std::string serialize_adChDict(adChDict* dict);

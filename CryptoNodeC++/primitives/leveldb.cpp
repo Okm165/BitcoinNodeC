@@ -41,8 +41,7 @@ void LevelDb::update(std::string &key, std::string &val)
         int64_t new_value = val_int + *(int64_t *)db_val_ret.data();
         if(new_value > 0)
         {
-            char* new_val = (char*)&new_value;
-            leveldb::Slice db_new_val(new_val, sizeof(int64_t));
+            leveldb::Slice db_new_val((const char*)&new_value, sizeof(int64_t));
             status = db->Put(leveldb::WriteOptions(), db_key, db_new_val);
             assert(status.ok());
         }
@@ -90,7 +89,7 @@ uint64_t LevelDb::getLength(uint64_t length)
     return counter;
 }
 
-void saveDict(std::string path, bool create_if_missing, adDict& dict)
+void saveDict(std::string path, adDict& dict, bool create_if_missing)
 {
     if(dirExists(path.c_str())){clearDir(path);}
     LevelDb db(path.c_str(), create_if_missing);
@@ -106,7 +105,7 @@ void saveDict(std::string path, bool create_if_missing, adDict& dict)
     bar.close();
 }
 
-void saveDict(std::string path, bool create_if_missing, amDict& dict)
+void saveDict(std::string path, amDict& dict, bool create_if_missing)
 {
     if(dirExists(path.c_str())){clearDir(path);}
     LevelDb db(path.c_str(), create_if_missing);
@@ -152,7 +151,8 @@ void compareDbs(std::string& path_1, std::string& path_2)
         std::string db_val_ret;
         status = db_2.db->Get(leveldb::ReadOptions(), db_1_key, &db_val_ret);
         
-        if(status.IsNotFound()){missmatch_counter++;}
+        if(status.IsNotFound())
+            missmatch_counter++;
         else
         {
             if(*(uint64_t*)db_1_value.ToString().c_str() == *(uint64_t*)db_val_ret.c_str())
