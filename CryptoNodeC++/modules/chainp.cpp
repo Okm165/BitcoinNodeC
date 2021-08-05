@@ -17,7 +17,6 @@ void ChainP::composeAddressDict()
         bar.update();
     }
     bar.close();
-
 }
 
 void ChainP::composeAmountDict()

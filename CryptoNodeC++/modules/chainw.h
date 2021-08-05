@@ -81,10 +81,7 @@ class ChainW
         this->override = override;
         title();
     }
-    ~ChainW()
-    {
-        delete startHashDb;
-    }
+    ~ChainW(){delete startHashDb;}
     void title();
 
     void compose_adChDict();
