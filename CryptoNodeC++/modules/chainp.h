@@ -54,7 +54,7 @@ class ChainP
 
     Dict* paths;
     Chain* chain;
-    AddressDecoder* opcodes;
+    AddressDecoder* addrdec;
     
     adDict addict;
     amDict amdict;
@@ -63,11 +63,11 @@ class ChainP
     public:
 
     ChainP(){};
-    ChainP(Dict* paths, Chain* chain, AddressDecoder* opcodes)
+    ChainP(Dict* paths, Chain* chain, AddressDecoder* addrdec)
     {
         this->paths = paths;
         this->chain = chain;
-        this->opcodes = opcodes;
+        this->addrdec = addrdec;
         title();
     }
     void title();

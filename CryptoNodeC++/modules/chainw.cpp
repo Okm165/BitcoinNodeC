@@ -13,20 +13,29 @@ void ChainW::compose_adChDict()
         std::string itpath = (*paths)["cache"] + StringToHexReversed(*it) + ".dict";
         if(!fileExists(itpath.c_str()))
         {
-            RBlock rblock = readRBlock(index, addrdec, (*paths)["blocks"].c_str(), *it);   
-            for(std::vector<RTxIn>::iterator rblock_it = rblock.inVec.begin(); rblock_it != rblock.inVec.end(); rblock_it++)
-                if(rblock_it->address.IsValid())
-                    dictWrite(&tmp, rblock_it->address.address, -rblock_it->amount);
-
-            BBlock bblock = readBBlock(index, addrdec, (*paths)["blocks"].c_str(), *it);
+            BBlock bblock = readBBlock(index, (*paths)["blocks"].c_str(), *it);
             for(std::vector<BTx>::iterator bblock_it = bblock.txVec.begin(); bblock_it != bblock.txVec.end(); bblock_it++)
-                for(std::vector<BTxOut>::iterator bblock_itin = bblock_it->outVec.begin(); bblock_itin != bblock_it->outVec.end(); bblock_itin++)
-                    if(bblock_itin->address.IsValid())
-                        dictWrite(&tmp, bblock_itin->address.address, bblock_itin->amount);
+                for(std::vector<BTxOut>::iterator bblock_itout = bblock_it->outVec.begin(); bblock_itout != bblock_it->outVec.end(); bblock_itout++)
+                {
+                    Address address;
+                    addrdec->addressDecode(&address, &bblock_itout->scriptSig, SCRIPT);
+                    if(address.IsValid())
+                        dictWrite(&tmp, address.address, (int64_t)bblock_itout->amount);
+                }
+
+            RBlock rblock = readRBlock(index, (*paths)["blocks"].c_str(), *it);
+            for(std::vector<RTxIn>::iterator rblock_it = rblock.inVec.begin(); rblock_it != rblock.inVec.end(); rblock_it++)
+            {
+                Address address;
+                addrdec->addressDecode(&address, &rblock_it->scriptSig, TYPE);
+                if(address.IsValid())
+                    dictWrite(&tmp, address.address, -(int64_t)rblock_it->amount);
+            }
 
             save_adChDict(&tmp, itpath);
         }
-        else{load_adChDict(&tmp, itpath);}
+        else
+            load_adChDict(&tmp, itpath);
 
         for(adChDict::iterator tmp_it = tmp.begin(); tmp_it != tmp.end(); tmp_it++)
             dictWrite(&adchdict, tmp_it->first, tmp_it->second);
@@ -53,6 +62,11 @@ void ChainW::compose_amChDict()
         if(status.IsNotFound())
         {
             uint64_t key = abs(it->second);
+            if(!key)
+            {
+                bar.update();
+                continue;
+            }
             dictWrite(&amchdict, key, 1);
         }
         else
@@ -146,6 +160,9 @@ void ChainW::composeState(std::string startHash, std::string dstHash)
     compose_adChDict();
     compose_amChDict();
     
+    std::string total((*paths)["cache"] + "total.dict");
+    save_adChDict(&adchdict, total);
+
     std::cout << "forking state" << std::endl;
     copyDir(starthashpath, dsthashpath);
 
@@ -206,11 +223,11 @@ int main()
 
     chainw.composeState(
         HexToStringReversed("00000000000000000006af3132ae7e718adc5f598480e8bbefd198047dba2eac"),
-        HexToStringReversed("00000000000000000008626e0ae241036d3f5ca671de884ff2b79545b54f45b3")
+        HexToStringReversed("0000000000000000000ded665b985a4000622a8529ea05cc0b395cefd894c659")
     );
 
     chainw.validateStates(
-        "00000000000000000008626e0ae241036d3f5ca671de884ff2b79545b54f45b3_1",
-        "00000000000000000008626e0ae241036d3f5ca671de884ff2b79545b54f45b3"
+        "0000000000000000000ded665b985a4000622a8529ea05cc0b395cefd894c659_1",
+        "0000000000000000000ded665b985a4000622a8529ea05cc0b395cefd894c659"
     );
 }

@@ -58,16 +58,16 @@ class ChainW
 
     adChDict adchdict;
     amChDict amchdict;
-    char direction = 0;                     // 1 if moving forward -1 if moving backward
+    char direction = 0;                         // 1 if moving forward -1 if moving backward
 
     std::string startHash;
     std::string dstHash;
     std::string starthashpath;
     std::string dsthashpath;
 
-    LevelDb* startHashDb;                   // start hash database, (for compose_amChDict functionality)
-    std::vector<std::string> hashPath;      // vector consiting hashes to go through in order to get to desired state
-    bool override;                          // if true chainwalker won't consider shorter paths, only absolute from startHash to dstHash
+    LevelDb* startHashDb;                       // start hash database, (for compose_amChDict functionality)
+    std::vector<std::string> hashPath;          // vector consiting hashes to go through in order to get to desired state
+    bool override;                              // if true chainwalker won't consider shorter paths, only absolute from startHash to dstHash
     ProgressBar* bar;
 
     public:
