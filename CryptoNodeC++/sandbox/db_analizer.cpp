@@ -23,17 +23,34 @@ void validateDbs(std::string& path_1, std::string& path_2)
         leveldb::Status status;
         std::string db_val_ret;
         status = db_2.db->Get(leveldb::ReadOptions(), db_1_key, &db_val_ret);
-
+        if(!status.ok())
+        {
+            if(status.IsNotFound()){std::cout << "IsNotFound" << std::endl;}
+            if(status.IsCorruption()){std::cout << "IsCorruption" << std::endl;}
+            if(status.IsIOError()){std::cout << "IsIOError" << std::endl;}
+            if(status.IsNotSupportedError()){std::cout << "IsNotSupportedError" << std::endl;}
+            if(status.IsInvalidArgument()){std::cout << "IsInvalidArgument" << std::endl;}
+        }
         if(status.IsNotFound())
         {
             std::cout << db_2_key << std::endl;
             Address addr_buf;
-            addr_buf.raw = db_2_key;
-            addrdec.scriptPubKey_parse(&addr_buf);
+            // addr_buf.raw = db_2_key;
+            addrdec.scriptPubKey_parse(&addr_buf, &db_2_key);
             // std::cout << StringToHex(db_2_key) << std::endl;
             std::cout << addr_buf.print() << std::endl;
-            std::cout << StringToHex(addr_buf.raw) << std::endl;
+            std::cout << StringToHex(db_2_key) << std::endl;
             std::cout << *(uint64_t*)db_1_value.ToString().c_str() << std::endl;
+        }
+        else
+        {
+            if(*(uint64_t*)db_1_value.ToString().c_str() != *(uint64_t*)db_val_ret.c_str())
+            {
+                std::cout << db_2_key << std::endl;
+                std::cout << StringToHex(db_2_key) << std::endl;
+                std::cout << *(uint64_t*)db_1_value.ToString().c_str() << std::endl;
+                std::cout << *(uint64_t*)db_val_ret.c_str() << std::endl;
+            }
         }
         db_1.it->Next();
     }
@@ -67,7 +84,7 @@ void validateStates(std::string hash1, std::string hash2)
 int main()
 {
     validateStates(
-        "0000000000000000000528fcb7dde91b7e85aa433eb3aa1b664bc57382b30d67_1",
-        "0000000000000000000528fcb7dde91b7e85aa433eb3aa1b664bc57382b30d67"
+        "00000000000000000006cf128fc0f8a024a2a3ec0a03c60c0e5bf889f03344b2",
+        "00000000000000000006cf128fc0f8a024a2a3ec0a03c60c0e5bf889f03344b2_1"
     );
 }
