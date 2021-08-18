@@ -9,7 +9,7 @@ std::string RTxIn::print(uint8_t n)
     string += dent(n+1) + "isCoinBase = " + std::to_string(isCoinBase) + "\n";
     string += dent(n+1) + "version = " + std::to_string(version) + "\n";
     string += dent(n+1) + "amount = " + std::to_string(amount) + "\n";
-    string += address.print(n+1);
+    string += dent(n+1) + "scriptSig = " + StringToHex(scriptSig) + "\n";
     string += dent(n) + "}\n";
     return string;
 }
@@ -34,7 +34,7 @@ std::string RBlock::print(uint8_t n)
     return string;
 }
 
-RBlock readRBlock(Index* index, AddressDecoder* addrdec, const char* rev_path, std::string& hash)
+RBlock readRBlock(Index* index, const char* rev_path, std::string& hash)
 {
     IBlock iblock = readIBlock(index, hash);
     RBlock rblock;
@@ -81,7 +81,7 @@ RBlock readRBlock(Index* index, AddressDecoder* addrdec, const char* rev_path, s
             if(height > 0)
                 txin.version = bstream.readVarInt();
             txin.amount = bstream.decompressAmount(bstream.readVarInt());
-            addrdec->addressDecode(&txin.address, &bstream, TYPE);
+            txin.scriptSig = bstream.read(bstream.readSpecialSize());
             rblock.inVec.push_back(txin);
         }
     }

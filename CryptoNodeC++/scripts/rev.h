@@ -23,7 +23,7 @@ struct RTxIn
     bool isCoinBase;                                // coinbase flag
     int64_t version;                                // transaction version
     uint64_t amount;                                // transaction input value in SAT (1 SAT = 1/100000000 BTC)
-    Address address;                                // address object
+    std::string scriptSig;                          // scriptSig
 
     std::string print(uint8_t n = 0);
 };
@@ -44,6 +44,6 @@ struct RBlock
     std::string print(uint8_t n = 0);
 };
 
-RBlock readRBlock(Index* index, AddressDecoder* addrdec, const char* rev_path, std::string& hash);
+RBlock readRBlock(Index* index, const char* rev_path, std::string& hash);
 
 #endif

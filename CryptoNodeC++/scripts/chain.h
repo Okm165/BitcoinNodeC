@@ -21,14 +21,14 @@ return total length of chainstate level database, or if length is specified retu
 
 #include "address.h"
 
-struct CBlock
+struct CTx
 {
     std::string hash;                               // transaction hash
     uint64_t blkHeight;                             // block height the transaction is in
     uint64_t nHeight;                               // transfer height in transaction
     bool isCoinBase;                                // coinbase flag
     uint64_t amount;                                // transaction input value in SAT (1 SAT = 1/100000000 BTC)
-    Address address;                                // address object
+    std::string scriptSig;                          // scriptSig
 
     std::string print(uint8_t n = 0);
 };
@@ -37,13 +37,12 @@ class Chain : public LevelDb
 {   
     public:
 
-    uint64_t cursor;
-    leveldb::Iterator* it;
+    leveldb::Iterator* cit;
     std::string obfuscation_key;                    // key to decode chain database
     std::string hash;                               // hash to which chain database holds
     
     Chain(){};
-    Chain(const char* path, uint64_t cursor=0, bool create_if_missing=false);
+    Chain(const char* path, bool create_if_missing=false);
 
     void getObfuscationKey();
 
@@ -56,6 +55,8 @@ class Chain : public LevelDb
     Row getRow();
 };
 
-CBlock readCBlock(Chain* chain, AddressDecoder* opcodes);
+CTx readCTx(Chain* chain);
+std::string composeCTxHash(std::string& hash, uint32_t n);
+CTx fetchCTx(Chain* chain, std::string& cTxHash);
 
 #endif

@@ -18,8 +18,9 @@ requires:   Index object pointer,
 
 struct BTxIn
 {
-    uint64_t nHeight;                               // height in transaction input vector           
-    Address address;                                // address object
+    std::string txHash;                             // transaction hash from which the amount was withdrawn          
+    uint32_t nHeight;                               // height in transaction input vector           
+    std::string scriptSig;                          // scriptSig
     uint32_t sequence;                              // sequence value (not crucial)    
     std::vector<std::string> witnessScriptVec;      // witness script vector
 
@@ -30,7 +31,7 @@ struct BTxOut
 {
     uint64_t nHeight;                               // height in transaction output vector           
     uint64_t amount;                                // transaction output value in SAT (1 SAT = 1/100000000 BTC)           
-    Address address;                                // address object
+    std::string scriptSig;                          // scriptSig
 
     std::string print(uint8_t n = 0);
 };
@@ -64,10 +65,10 @@ struct BBlock
     std::string print(uint8_t n = 0);
 };
 
-std::vector<BTxIn> readInVector(BStream* bstream, AddressDecoder* addrdec);
+std::vector<BTxIn> readInVector(BStream* bstream);
 
-std::vector<BTxOut> readOutVector(BStream* bstream, AddressDecoder* addrdec);
+std::vector<BTxOut> readOutVector(BStream* bstream);
 
-BBlock readBBlock(Index* index, AddressDecoder* addrdec, const char* blk_path, std::string& hash);
+BBlock readBBlock(Index* index, const char* blk_path, std::string& hash);
 
 #endif

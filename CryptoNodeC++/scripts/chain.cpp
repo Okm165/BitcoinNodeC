@@ -1,6 +1,6 @@
 #include "chain.h"
 
-std::string CBlock::print(uint8_t n)
+std::string CTx::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "CTxOut{\n";
@@ -9,17 +9,16 @@ std::string CBlock::print(uint8_t n)
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
     string += dent(n+1) + "isCoinBase = " + std::to_string(isCoinBase) + "\n";
     string += dent(n+1) + "amount = " + std::to_string(amount) + "\n";
-    string += address.print(n+1);
+    string += dent(n+1) + "scriptSig = " + StringToHex(scriptSig) + "\n";
     string += dent(n) + "}\n";
     return string;
 }
 
-Chain::Chain(const char* path, uint64_t cursor, bool create_if_missing) : LevelDb::LevelDb(path, create_if_missing)
+Chain::Chain(const char* path, bool create_if_missing) : LevelDb::LevelDb(path, create_if_missing)
 {
-    this->cursor = cursor;
-    it = db->NewIterator(leveldb::ReadOptions());
-    it->SeekToFirst();
-    assert(it->Valid());
+    cit = db->NewIterator(leveldb::ReadOptions());
+    cit->SeekToFirst();
+    assert(cit->Valid());
     // initialization steps
     getObfuscationKey();
     getBlockHash();
@@ -27,11 +26,10 @@ Chain::Chain(const char* path, uint64_t cursor, bool create_if_missing) : LevelD
 
 void Chain::getObfuscationKey()
 {
-    std::string key = it->key().ToString();
-    std::string value = it->value().ToString();
-    cursor++;
-    it->Next();
-    assert(it->Valid());
+    std::string key = cit->key().ToString();
+    std::string value = cit->value().ToString();
+    cit->Next();
+    assert(cit->Valid());
     std::string key_pattern;
     key_pattern += char(0x0e);
     key_pattern += char(0x00);
@@ -51,14 +49,17 @@ uint64_t Chain::getLength(uint64_t length)
 {
     if(length){return length;}
     // get current position
-    leveldb::Slice pos = it->key();
+    std::string pos = cit->key().ToString();
     uint64_t counter = 0;
-    while(it->Valid())
+    while(cit->Valid())
     {
-        it->Next();
+        cit->Next();
         counter++;
     }
-    it->Seek(pos);
+    cit->Seek(leveldb::Slice(pos));
+    // cit->SeekToFirst();
+    // cit->Next();
+    // cit->Prev();
     return counter;
 }
 
@@ -73,30 +74,73 @@ std::string Chain::applyObfuscationKey(const std::string& data)
 
 Row Chain::getRow()
 {
-    std::string key = it->key().ToString();
-    std::string value = it->value().ToString();
-    cursor++;
-    it->Next();
-    assert(it->Valid());
+    std::string key;
+    std::string value;
+    while(true)
+    {
+        if(cit->Valid())
+        {
+            key = cit->key().ToString();
+            value = cit->value().ToString();
+            break;
+        }
+        else
+        {
+            cit->Next();
+        }
+    }
+    cit->Next();
     Row ret(key, applyObfuscationKey(value));
     return ret;
 }
 
-CBlock readCBlock(Chain* chain, AddressDecoder* addrdec)
+CTx readCTx(Chain* chain)
 {
     Row row = chain->getRow();
-    CBlock cblock;
+    CTx ctx;
 
     BStream bstream_key(&row.first);
     bstream_key.movePos(1);
-    cblock.hash = bstream_key.read(32);
-    cblock.nHeight = bstream_key.readVarInt();
+    ctx.hash = bstream_key.read(32);
+    ctx.nHeight = bstream_key.readVarInt();
 
     BStream bstream_value(&row.second);
     uint64_t code =  bstream_value.readVarInt();
-    cblock.isCoinBase = (bool)(code & 1);
-    cblock.blkHeight = code >> 1;
-    cblock.amount = bstream_value.decompressAmount(bstream_value.readVarInt());
-    addrdec->addressDecode(&cblock.address, &bstream_value, TYPE);
-    return cblock;
+    ctx.isCoinBase = (bool)(code & 1);
+    ctx.blkHeight = code >> 1;
+    ctx.amount = bstream_value.decompressAmount(bstream_value.readVarInt());
+    ctx.scriptSig = bstream_value.read(bstream_value.readSpecialSize());
+    return ctx;
+}
+
+std::string composeCTxHash(std::string& hash, uint32_t n)
+{
+    std::string ret;
+    ret += 'C';
+    ret += hash;
+    ret += writeVarInt(n);
+    return ret;
+}
+
+CTx fetchCTx(Chain* chain, std::string& cTxHash)
+{
+    leveldb::Slice key (cTxHash);
+    std::string value;
+    leveldb::Status status = chain->db->Get(leveldb::ReadOptions(), key, &value);
+    value = chain->applyObfuscationKey(value);
+
+    CTx ctx;
+
+    BStream bstream_key(&cTxHash);
+    bstream_key.movePos(1);
+    ctx.hash = bstream_key.read(32);
+    ctx.nHeight = bstream_key.readVarInt();
+
+    BStream bstream_value(&value);
+    uint64_t code =  bstream_value.readVarInt();
+    ctx.isCoinBase = (bool)(code & 1);
+    ctx.blkHeight = code >> 1;
+    ctx.amount = bstream_value.decompressAmount(bstream_value.readVarInt());
+    ctx.scriptSig = bstream_value.read(bstream_value.readSpecialSize());
+    return ctx;
 }

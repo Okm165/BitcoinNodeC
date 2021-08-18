@@ -16,6 +16,7 @@ const char* GetAddressDecoderTypeName(const AddressDecoderType& type)
     {
     case NONE                       : return "NONE";
     case FAIL                       : return "FAIL";
+    case BURN                       : return "BURN";
     case P2SH                       : return "P2SH";
     case P2PKH                      : return "P2PKH";
     case P2WSH                      : return "P2WSH";
@@ -169,8 +170,6 @@ std::string Address::print(uint8_t n)
     std::string string;
     string =  dent(n) + "Address{\n";
     string += dent(n+1) + "addressFlag = " + std::to_string(addressFlag) + "\n";
-    string += dent(n+1) + "raw = " + raw + "\n";
-    string += dent(n+1) + "raw_size = " + std::to_string(raw.size()) + "\n";
     string += dent(n+1) + "address = " + address + "\n";
     string += dent(n+1) + "type = " + GetAddressDecoderTypeName(type) + "\n";
     if(decoded.size())
@@ -191,7 +190,7 @@ std::string Address::print(uint8_t n)
     return string;
 }
 
-bool Address::IsValid(){return ((addressFlag == true) && (type != FAIL));}
+bool Address::IsValid(){return ((type != FAIL) && (type != BURN) && (type != NONE));}
 
 std::string sha256(const std::string& data)
 {
@@ -251,9 +250,9 @@ std::string AddressDecoder::bech32(const std::string& script)
     return EncodeBech32(Encoding::BECH32, "bc", values);
 }
 
-std::string AddressDecoder::base58_P2PKH(std::string& script){return base58(script, 0);}
+std::string AddressDecoder::base58_P2PKH(const std::string& script){return base58(script, 0);}
 
-std::string AddressDecoder::base58_P2SH(std::string& script){return base58(script, 5);}
+std::string AddressDecoder::base58_P2SH(const std::string& script){return base58(script, 5);}
 
 std::string AddressDecoder::base58_P2PK_ripemdsha(std::string& script){return base58(ripemdsha(script), 0);}
 
@@ -261,9 +260,9 @@ std::string AddressDecoder::base58_P2S_ripemdsha(std::string& script){return bas
 
 std::string AddressDecoder::bech32_P2W(std::string& script){return bech32(script);}
 
-void AddressDecoder::scriptPubKey_parse(Address* addr_buf)
+void AddressDecoder::scriptPubKey_parse(Address* addr_buf, std::string* data)
 {
-    BStream bstream (&addr_buf->raw);
+    BStream bstream (data);
     uint64_t length = bstream.getLength();
     while(bstream.getPos() < length)
     {
@@ -287,7 +286,27 @@ void AddressDecoder::scriptPubKey_parse(Address* addr_buf)
             addr_buf->decoded.push_back(bstream.read(2));
         else if(curr_byte == OP_PUSHDATA4)
             addr_buf->decoded.push_back(bstream.read(4));
-        else if(curr_byte == OP_RETURN || GetOpName(OpCodeType(curr_byte)) == "OP_UNKNOWN")
+        else if (curr_byte == OP_RETURN ||
+                curr_byte == OP_CAT ||
+                curr_byte == OP_SUBSTR ||
+                curr_byte == OP_LEFT ||
+                curr_byte == OP_RIGHT ||
+                curr_byte == OP_INVERT ||
+                curr_byte == OP_AND ||
+                curr_byte == OP_OR ||
+                curr_byte == OP_XOR ||
+                curr_byte == OP_2MUL ||
+                curr_byte == OP_2DIV ||
+                curr_byte == OP_MUL ||
+                curr_byte == OP_DIV ||
+                curr_byte == OP_MOD ||
+                curr_byte == OP_LSHIFT ||
+                curr_byte == OP_RSHIFT)
+        {
+            addr_buf->type = FAIL;
+            break;
+        }
+        else if(GetOpName(OpCodeType(curr_byte)) == "OP_UNKNOWN")
         {
             addr_buf->type = FAIL;
             break;
@@ -295,14 +314,15 @@ void AddressDecoder::scriptPubKey_parse(Address* addr_buf)
     }
 }
 
-void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const AddressDecoderMode& mode)
+void AddressDecoder::addressDecode(Address* addr_buf, std::string* data, const AddressDecoderMode& mode)
 {
     addr_buf->type = NONE;
     addr_buf->addressFlag = false;
 
     if(mode == TYPE)
-    {   
-        uint64_t scriptLength = bstream->readVarInt();
+    {
+        BStream bstream(data);
+        uint64_t scriptLength = bstream.readVarInt();
 
         if(scriptLength < SPECIAL_SCRIPT_SIZE)
         {
@@ -310,43 +330,48 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
             if(scriptLength == 0x00)
             {
                 addr_buf->type = P2PKH;
-                addr_buf->raw = bstream->read(20);
-                addr_buf->address = base58_P2PKH(addr_buf->raw);
+                addr_buf->address = base58_P2PKH(bstream.read(20));
                 addr_buf->addressFlag = true;
             }
             // base58 P2SH
             else if(scriptLength == 0x01)
             {
                 addr_buf->type = P2SH;
-                addr_buf->raw = bstream->read(20);
-                addr_buf->address = base58_P2SH(addr_buf->raw);
+                addr_buf->address = base58_P2SH(bstream.read(20));
                 addr_buf->addressFlag = true;
             }
             // base58 P2PKH no ripemdsha
             else if(scriptLength == 0x02 || scriptLength == 0x03)
             {
                 addr_buf->type = P2PKH_NO_RIPEMDSHA;
-                addr_buf->raw = bstream->read(32);
-
                 std::string insert;
+                std::string tmp = bstream.read(32);
+
                 insert += (char)scriptLength;
-                insert += addr_buf->raw;
+                insert += tmp;
 
                 if(PK_check(insert))
                 {
                     addr_buf->address = base58_P2PK_ripemdsha(insert);
                     addr_buf->addressFlag = true;
                 }
+                else
+                {
+                    addr_buf->type = OTHER;
+                    tmp += (char)OP_CHECKSIG;
+                    addr_buf->address = tmp;
+                    addr_buf->addressFlag = false;
+                }
             }
             // base58 P2PKH compressed
             else if(scriptLength == 0x04 || scriptLength == 0x05)
             {
                 addr_buf->type = P2PKH_COMPRESSED;
-                addr_buf->raw = bstream->read(32);
-
                 std::string insert;
+                std::string tmp = bstream.read(32);
+
                 insert += (char)(scriptLength-2);
-                insert += addr_buf->raw;
+                insert += tmp;
 
                 std::string pub_key;
                 if(PK_decompress(insert, pub_key))
@@ -354,79 +379,91 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
                     addr_buf->address = base58_P2PK_ripemdsha(pub_key);
                     addr_buf->addressFlag = true;
                 }
+                else
+                {
+                    addr_buf->type = OTHER;
+                    tmp += (char)OP_CHECKSIG;
+                    addr_buf->address = tmp;
+                    addr_buf->addressFlag = false;
+                }
             }
         }
         else
         {
             scriptLength -= SPECIAL_SCRIPT_SIZE;
-            addr_buf->raw = bstream->read(scriptLength);
-            scriptPubKey_parse(addr_buf);
+            std::string tmp = bstream.read(scriptLength);
+            scriptPubKey_parse(addr_buf, &tmp);
             if(addr_buf->type == FAIL)
                 return;
 
             if(addr_buf->decoded.size() == 2)
-            { 
-                // burn
-                if((addr_buf->decoded[0].size() == sizeof(uint8_t) && *(uint8_t*)(addr_buf->decoded[0]).c_str() == OP_RETURN) || (addr_buf->decoded[1].size() == sizeof(uint8_t) && *(uint8_t*)addr_buf->decoded[1].c_str() == OP_RETURN))
-                {
-                    addr_buf->type = FAIL;
-                    addr_buf->addressFlag = true;
-                }
+            {
                 // bech32_P2WPKH
-                else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && addr_buf->decoded[0].size() == sizeof(uint8_t) && addr_buf->decoded[1].size() == 20)
+                if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && 
+                    addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                    addr_buf->decoded[1].size() == 20)
                 {
                     addr_buf->type = P2WPKH;
                     addr_buf->address = bech32_P2W(addr_buf->decoded[1]);
                     addr_buf->addressFlag = true;
                 }
                 // bech32_P2WSH
-                else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && addr_buf->decoded[0].size() == sizeof(uint8_t) && addr_buf->decoded[1].size() == 32)
+                else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && 
+                    addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                    addr_buf->decoded[1].size() == 32)
                 {
                     addr_buf->type = P2WSH;
                     addr_buf->address = bech32_P2W(addr_buf->decoded[1]);
                     addr_buf->addressFlag = true;
                 }
             }
+            // other (mostly P2MS)
             else
             {
                 addr_buf->type = OTHER;
-                addr_buf->address = addr_buf->raw;
-                addr_buf->addressFlag = true;
+                addr_buf->address = tmp;
+                addr_buf->addressFlag = false;
             }
         }
     }
     else if(mode == SCRIPT)
     {
-        uint64_t scriptLength = bstream->readCompactSize();
-        addr_buf->raw = bstream->read(scriptLength);
-        scriptPubKey_parse(addr_buf);
+        scriptPubKey_parse(addr_buf, data);
         if(addr_buf->type == FAIL)
             return;
 
         if(addr_buf->decoded.size() == 2)
         {
             // burn
-            if((addr_buf->decoded[0].size() == sizeof(uint8_t) && *(uint8_t*)(addr_buf->decoded[0]).c_str() == OP_RETURN) || (addr_buf->decoded[1].size() == sizeof(uint8_t) && *(uint8_t*)addr_buf->decoded[1].c_str() == OP_RETURN))
+            if((addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                *(uint8_t*)(addr_buf->decoded[0]).c_str() == OP_RETURN) || 
+                (addr_buf->decoded[1].size() == sizeof(uint8_t) && 
+                *(uint8_t*)addr_buf->decoded[1].c_str() == OP_RETURN))
             {
-                addr_buf->type = FAIL;
-                addr_buf->addressFlag = true;
+                addr_buf->type = BURN;
+                addr_buf->addressFlag = false;
             }
             // bech32_P2WPKH
-            else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && addr_buf->decoded[0].size() == sizeof(uint8_t) && addr_buf->decoded[1].size() == 20)
+            else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && 
+                addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                addr_buf->decoded[1].size() == 20)
             {
                 addr_buf->type = P2WPKH;
                 addr_buf->address = bech32_P2W(addr_buf->decoded[1]);
                 addr_buf->addressFlag = true;
             }
             // bech32_P2WSH
-            else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && addr_buf->decoded[0].size() == sizeof(uint8_t) && addr_buf->decoded[1].size() == 32)
+            else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_0 && 
+                    addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                    addr_buf->decoded[1].size() == 32)
             {
                 addr_buf->type = P2WSH;
                 addr_buf->address = bech32_P2W(addr_buf->decoded[1]);
                 addr_buf->addressFlag = true;
             }
             // base58_P2PKH
-            else if(*(uint8_t*)addr_buf->decoded[1].c_str() == OP_CHECKSIG && addr_buf->decoded[1].size() == sizeof(uint8_t))
+            else if(*(uint8_t*)addr_buf->decoded[1].c_str() == OP_CHECKSIG && 
+                    addr_buf->decoded[1].size() == sizeof(uint8_t))
             {
                 if(addr_buf->decoded[0].size() == 65)
                 {
@@ -435,6 +472,12 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
                     {
                         addr_buf->address = base58_P2PK_ripemdsha(addr_buf->decoded[0]);
                         addr_buf->addressFlag = true;
+                    }
+                    else
+                    {
+                        addr_buf->type = OTHER;
+                        addr_buf->address = *data;
+                        addr_buf->addressFlag = false;
                     }
                 }
                 else if(addr_buf->decoded[0].size() == 33)
@@ -446,18 +489,38 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
                         addr_buf->address = base58_P2PK_ripemdsha(addr_buf->decoded[0]);
                         addr_buf->addressFlag = true;
                     }
+                    else
+                    {
+                        addr_buf->type = OTHER;
+                        addr_buf->address = *data;
+                        addr_buf->addressFlag = false;
+                    }
                 }
             }
         }
         // base58_P2SH
-        else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_HASH160 && addr_buf->decoded[0].size() == sizeof(uint8_t) && addr_buf->decoded[1].size() == 20 && *(uint8_t*)addr_buf->decoded[2].c_str() == OP_EQUAL && addr_buf->decoded[2].size() == sizeof(uint8_t) && addr_buf->decoded.size() == 3)
+        else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_HASH160 && 
+                addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                addr_buf->decoded[1].size() == 20 && 
+                *(uint8_t*)addr_buf->decoded[2].c_str() == OP_EQUAL && 
+                addr_buf->decoded[2].size() == sizeof(uint8_t) && 
+                addr_buf->decoded.size() == 3)
         {
             addr_buf->type = P2SH;
             addr_buf->address = base58_P2SH(addr_buf->decoded[1]);
             addr_buf->addressFlag = true;
         }
         // base58_P2PKH
-        else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_DUP && addr_buf->decoded[0].size() == sizeof(uint8_t) && *(uint8_t*)addr_buf->decoded[1].c_str() == OP_HASH160 && addr_buf->decoded[1].size() == sizeof(uint8_t) && addr_buf->decoded[2].size() == 20 && *(uint8_t*)addr_buf->decoded[3].c_str() == OP_EQUALVERIFY && addr_buf->decoded[3].size() == sizeof(uint8_t) && *(uint8_t*)addr_buf->decoded[4].c_str() == OP_CHECKSIG && addr_buf->decoded[4].size() == sizeof(uint8_t) && addr_buf->decoded.size() == 5)
+        else if(*(uint8_t*)addr_buf->decoded[0].c_str() == OP_DUP && 
+                addr_buf->decoded[0].size() == sizeof(uint8_t) && 
+                *(uint8_t*)addr_buf->decoded[1].c_str() == OP_HASH160 && 
+                addr_buf->decoded[1].size() == sizeof(uint8_t) && 
+                addr_buf->decoded[2].size() == 20 && 
+                *(uint8_t*)addr_buf->decoded[3].c_str() == OP_EQUALVERIFY && 
+                addr_buf->decoded[3].size() == sizeof(uint8_t) && 
+                *(uint8_t*)addr_buf->decoded[4].c_str() == OP_CHECKSIG && 
+                addr_buf->decoded[4].size() == sizeof(uint8_t) && 
+                addr_buf->decoded.size() == 5)
         {
             addr_buf->type = P2PKH;
             addr_buf->address = base58_P2PKH(addr_buf->decoded[2]);
@@ -467,8 +530,8 @@ void AddressDecoder::addressDecode(Address* addr_buf, BStream* bstream, const Ad
         else
         {
             addr_buf->type = OTHER;
-            addr_buf->address = addr_buf->raw;
-            addr_buf->addressFlag = true;
+            addr_buf->address = *data;
+            addr_buf->addressFlag = false;
         }
     }
 }

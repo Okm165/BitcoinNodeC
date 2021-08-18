@@ -18,8 +18,6 @@ SCRIPT  -- ?????blk.dat
 #include "../crypto/crypto.h"
 #include "../primitives/primitives.h"
 
-#define SPECIAL_SCRIPT_SIZE 6
-
 enum AddressDecoderMode
 {
     TYPE,                                       // type defined encoding
@@ -32,6 +30,7 @@ enum AddressDecoderType
 {
     NONE,                                       // default value
     FAIL,                                       // failed to decode scriptPubKey or scriptPubKey results in failture
+    BURN,                                       // burning coins transaction
     P2SH,                                       // pay to script hash
     P2PKH,                                      // pay to public key hash
     P2WSH,                                      // pay to witness script hash
@@ -46,7 +45,6 @@ const char* GetAddressDecoderTypeName(const AddressDecoderType& type);
 struct Address
 {
     bool addressFlag;                           // true if address successfuly decoded, false otherwise 
-    std::string raw;                            // raw data from which address is decoded
     std::string address;                        // decoded address string
     AddressDecoderType type;                    // address type
     std::vector<std::string> decoded;           // entire decoded vector 
@@ -67,15 +65,15 @@ class AddressDecoder
         secp256k1_context_destroy(ctx);
     }
 
-    void scriptPubKey_parse(Address* addr_buf);
-    void addressDecode(Address* addr_buf, BStream* bstream, const AddressDecoderMode& mode);
+    void scriptPubKey_parse(Address* addr_buf, std::string* data);
+    void addressDecode(Address* addr_buf, std::string* data, const AddressDecoderMode& mode);
     
     bool PK_check(std::string data);
     bool PK_decompress(std::string data, std::string& pub_key);
     std::string base58(const std::string& data, unsigned char id);
     std::string bech32(const std::string& data);
-    std::string base58_P2PKH(std::string& data);
-    std::string base58_P2SH(std::string& data);
+    std::string base58_P2PKH(const std::string& data);
+    std::string base58_P2SH(const std::string& data);
     std::string base58_P2PK_ripemdsha(std::string& data);
     std::string base58_P2S_ripemdsha(std::string& data);
     std::string bech32_P2W(std::string& data);

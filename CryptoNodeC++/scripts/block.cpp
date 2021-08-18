@@ -4,16 +4,16 @@ std::string BTxIn::print(uint8_t n)
 {
     std::string string;
     string =  dent(n) + "BTxIn{\n";
+    string += dent(n+1) + "txHash = " + StringToHexReversed(txHash) + "\n";
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
-    // string += address.print(n+1);
+    string += dent(n+1) + "scriptSig = " + StringToHex(scriptSig) + "\n";
     string += dent(n+1) + "sequence = " + std::to_string(sequence) + "\n";
     string += dent(n+1) + "wScriptLength = " + std::to_string(witnessScriptVec.size()) + "\n";
-    // string += dent(n+1) + "witnessScriptVec = ";
-    // for(std::string wtn : witnessScriptVec)
-    // {
-    //     string += wtn + " ";
-    // }
-    // string += "\n";
+    string += dent(n+1) + "witnessScriptVec = \n";
+    for(std::string wtn : witnessScriptVec)
+    {
+        string += dent(n+2) + StringToHex(wtn) + "\n";
+    }
     string += dent(n) + "}\n";
     return string;
 }
@@ -24,7 +24,7 @@ std::string BTxOut::print(uint8_t n)
     string =  dent(n) + "BTxOut{\n";
     string += dent(n+1) + "nHeight = " + std::to_string(nHeight) + "\n";
     string += dent(n+1) + "amount = " + std::to_string(amount) + "\n";
-    string += address.print(n+1);
+    string += dent(n+1) + "scriptSig = " + StringToHex(scriptSig) + "\n";
     string += dent(n) + "}\n";
     return string;
 }
@@ -68,7 +68,7 @@ std::string BBlock::print(uint8_t n)
     return string;
 }
 
-std::vector<BTxIn> readInVector(BStream* bstream, AddressDecoder* addrdec)
+std::vector<BTxIn> readInVector(BStream* bstream)
 {
     uint64_t inVecLength = bstream->readCompactSize();
     std::vector<BTxIn> inVec;
@@ -78,17 +78,16 @@ std::vector<BTxIn> readInVector(BStream* bstream, AddressDecoder* addrdec)
     for(uint64_t it = 0; it < inVecLength; it++)
     {
         BTxIn txin;
-        bstream->movePos(32);
+        txin.txHash = bstream->read(32);
         txin.nHeight = bstream->read<uint32_t>();
-        // addrdec->addressDecode(&txin.address, bstream, SCRIPT);
-        bstream->movePos(bstream->readCompactSize());
+        txin.scriptSig = bstream->read(bstream->readCompactSize());
         txin.sequence = bstream->read<uint32_t>();
         inVec.push_back(txin);
     }
     return inVec;
 }
 
-std::vector<BTxOut> readOutVector(BStream* bstream, AddressDecoder* addrdec)
+std::vector<BTxOut> readOutVector(BStream* bstream)
 {
     uint64_t outVecLength = bstream->readCompactSize();
     std::vector<BTxOut> outVec;
@@ -100,13 +99,13 @@ std::vector<BTxOut> readOutVector(BStream* bstream, AddressDecoder* addrdec)
         BTxOut txout;
         txout.nHeight = it;
         txout.amount = bstream->read<uint64_t>();
-        addrdec->addressDecode(&txout.address, bstream, SCRIPT);
+        txout.scriptSig = bstream->read(bstream->readCompactSize());
         outVec.push_back(txout);
     }
     return outVec;
 }
 
-BBlock readBBlock(Index* index, AddressDecoder* addrdec, const char * blk_path, std::string& hash)
+BBlock readBBlock(Index* index, const char * blk_path, std::string& hash)
 {
     IBlock iblock = readIBlock(index, hash);
     BBlock bblock;
@@ -162,15 +161,15 @@ BBlock readBBlock(Index* index, AddressDecoder* addrdec, const char * blk_path, 
         // read in and out vectors
         char flags = 0;
         uint64_t tx_hashbuff_pt1 = bstream.getPos();
-        tx.inVec = readInVector(&bstream, addrdec);
+        tx.inVec = readInVector(&bstream);
         if(tx.inVec.size() == 0 && allowWitness)
         {
             flags = bstream.read<char>();
             if(flags != 0)
             {
                 uint64_t tx_hashbuff_pt1 = bstream.getPos();
-                tx.inVec = readInVector(&bstream, addrdec);
-                tx.outVec = readOutVector(&bstream, addrdec);
+                tx.inVec = readInVector(&bstream);
+                tx.outVec = readOutVector(&bstream);
                 uint64_t tx_hashbuff_pt2 = bstream.getPos();
 
                 bstream.setPos(tx_hashbuff_pt1);
@@ -179,7 +178,7 @@ BBlock readBBlock(Index* index, AddressDecoder* addrdec, const char * blk_path, 
         }
         else
         {
-            tx.outVec = readOutVector(&bstream, addrdec);
+            tx.outVec = readOutVector(&bstream);
             uint64_t tx_hashbuff_pt2 = bstream.getPos();
 
             bstream.setPos(tx_hashbuff_pt1);
