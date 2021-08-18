@@ -21,8 +21,6 @@ uint64_t BStream::getLength(){return bytes->size();}
 //read length of bytes
 std::string BStream::read(uint64_t length)
 {
-    if(cursor+length > bytes->size())
-        length = bytes->size()-cursor;
     std::string ret(&(bytes->data()[cursor]), length);
     movePos(length);
     return ret;
@@ -41,6 +39,25 @@ uint64_t BStream::readCompactSize()
     else if(chSize == 254){nSize = read<uint32_t>();}
     else{nSize = read<uint64_t>();}
     return nSize;
+}
+
+uint64_t BStream::readSpecialSize()
+{
+    uint64_t startPos = getPos();
+    uint64_t scriptLength = readVarInt();
+
+    if(scriptLength < SPECIAL_SCRIPT_SIZE)
+    {
+        movePos(getSpecialScriptSize(scriptLength));
+    }
+    else
+    {
+        scriptLength -= SPECIAL_SCRIPT_SIZE;
+        movePos(scriptLength);
+    }
+    uint64_t currPos = getPos();
+    setPos(startPos);
+    return (currPos - startPos);
 }
 
 //read all bites till end

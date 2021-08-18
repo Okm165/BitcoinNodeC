@@ -13,6 +13,8 @@ bytestream serves bytearray functionalities
 #ifndef BSTREAM_H
 #define BSTREAM_H
 
+#define SPECIAL_SCRIPT_SIZE 6
+
 #include "util.h"
 
 class BStream
@@ -24,42 +26,43 @@ class BStream
 
     BStream(std::string* data, uint64_t cursor=0);
 
-    //get current position in bytestream
+    // get current position in bytestream
     uint64_t getPos();
 
-    //set absolute position in bytestream
+    // set absolute position in bytestream
     void setPos(const uint64_t& pos);
 
-    //move cursor relatively to current position
+    // move cursor relatively to current position
     void movePos(const uint64_t& step);
 
-    //get length
+    // get length
     uint64_t getLength();
 
-    //read bytes
+    // read bytes
     template<class T>
     T read()
     {
-        if(cursor+sizeof(T) > bytes->size())
-            return 0;
         T ret = *(T *)&(bytes->data()[cursor]);
         movePos(sizeof(T));
         return ret;
     }
     
-    //read length of bytes
+    // read length of bytes
     std::string read(uint64_t length);
 
-    //reset cursor to 0
+    // reset cursor to 0
     void reset();
 
-    //read compact size
+    // read compact size
     uint64_t readCompactSize();
 
-    //read all bites till end
+    // read size of special script
+    uint64_t readSpecialSize();
+
+    // read all bites till end
     std::string readToEnd();
 
-    //read variable length integer
+    // read variable length integer
     uint64_t readVarInt();
 
     // amount decompress

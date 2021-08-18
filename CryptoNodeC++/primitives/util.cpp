@@ -183,3 +183,30 @@ adChDict deserialize_adChDict(std::string* dict)
     }
     return ret;
 }
+
+std::string writeVarInt(uint32_t n)
+{
+    std::string ret;
+    unsigned char tmp[(sizeof(n)*8+6)/7];
+    int len=0;
+    while(true) {
+        tmp[len] = (n & 0x7F) | (len ? 0x80 : 0x00);
+        if (n <= 0x7F)
+            break;
+        n = (n >> 7) - 1;
+        len++;
+    }
+    do {
+        ret += (char)tmp[len];
+    } while(len--);
+    return ret;
+}
+
+uint32_t getSpecialScriptSize(uint32_t nSize)
+{
+    if (nSize == 0 || nSize == 1)
+        return 20;
+    if (nSize == 2 || nSize == 3 || nSize == 4 || nSize == 5)
+        return 32;
+    return 0;
+}

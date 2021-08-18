@@ -113,7 +113,8 @@ void saveDict(std::string path, amDict& dict, bool create_if_missing)
     ProgressBar bar ("saving amount dict", dict.size(), PROGRESS_BAR_SETTINGS);
     for(amDict::iterator it = dict.begin(); it != dict.end(); it++)
     {
-        std::string key ((const char*)&it->first, sizeof(uint64_t));
+        uint64_t key_reversed_endian = switchEndian(it->first);                             // for sorted layout in leveldb
+        std::string key ((const char*)&key_reversed_endian, sizeof(uint64_t));
         std::string value ((const char*)&it->second, sizeof(uint64_t));
         db.update(key, value);
         bar.update();
@@ -140,7 +141,7 @@ void compareDbs(std::string& path_1, std::string& path_2)
     uint64_t match_counter = 0;
     uint64_t missmatch_counter = 0;
 
-    ProgressBar bar ("comparing", std::max(db_1_length, db_2_length), PROGRESS_BAR_SETTINGS);
+    ProgressBar bar ("comparing", db_1_length, PROGRESS_BAR_SETTINGS);
     while(db_1.it->Valid())
     {
         leveldb::Slice db_1_key = db_1.it->key();

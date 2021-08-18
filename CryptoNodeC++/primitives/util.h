@@ -66,10 +66,31 @@ void dictWrite(Dict* dict, const Key& key, const Value& value)
             (*dict)[key] = newval;
     }
     else
-        (*dict)[key] = value;
+    {
+        if(value)
+            (*dict)[key] = value;
+    }
+        
 }
 
 std::string serialize_adChDict(adChDict* dict);
 adChDict deserialize_adChDict(std::string* dict);
+
+// read variable length integer
+std::string writeVarInt(uint32_t n);
+
+// get special script size
+uint32_t getSpecialScriptSize(uint32_t nSize);
+
+// switch endian functionality
+template <class T>
+T switchEndian(T &num)
+{
+    char reversed[sizeof(T)];
+    for(uint32_t it = 0; it < sizeof(T); it++)
+        reversed[it] = ((char*)(&num))[sizeof(T)-1-it];
+
+    return *(T*)reversed;
+}
 
 #endif
